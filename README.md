@@ -32,7 +32,18 @@ curl -H "Authorization: Bearer $FORK_BALANCER_TOKEN" -H "Content-Type: applicati
 Responses carry `X-Fork-Lane` — which lane served — and the upstream `model` field
 names the brain. Always report it.
 
-## Deploy (standalone)
+## Deploy (standalone) — ONE script
+
+```bash
+./scarecrow.sh        # sets up (.env, checks) AND starts; waits healthy; prints the GUI URL
+```
+
+That single script does everything: creates `.env` from the template if missing, validates
+the source/registry/GUI, starts via docker compose when available (falls back to bare
+python on non-docker hosts), waits for `/health`, and prints the control-GUI URL.
+Subcommands: `setup` · `run` · `stop` · `restart` · `status` · `logs`.
+
+Manual path (if you prefer):
 
 ```bash
 cp .env.example .env          # fill in keys (the running container holds live values)

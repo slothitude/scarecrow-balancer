@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCARECROW admin</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    background: #111; color: #ddd; margin: 24px;
+    font: 13px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  h1 { color: #ffb454; font-size: 18px; letter-spacing: 1px; margin: 0 0 8px; }
+  #ladder { color: #7ee787; margin-bottom: 4px; }
+  #fleet {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    margin-bottom: 4px;
+  }
+  .chip {
+    border: 1px solid #2f5a38; background: #16241a; color: #7ee787;
+    padding: 1px 8px; border-radius: 10px;
+  }
+  .chip.stale { border-color: #333; background: #161616; color: #888; }
+  #fleetrate { color: #888; }
+  #status { color: #888; margin-bottom: 16px; min-height: 18px; white-space: pre-wrap; }
+  #status.err { color: #ff6b6b; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
+  th, td { border: 1px solid #333; padding: 5px 8px; text-align: left; }
+  th { color: #ffb454; background: #1a1a1a; }
+  td.dim, .dim { color: #888; }
+  tr.tierhead td {
+    color: #ffb454; background: #141414; font-weight: bold;
+    letter-spacing: 2px; border-color: #383838;
+  }
+  td.wait    { color: #ffb454; font-weight: bold; }
+  td.wait0   { color: #555; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+  .dot.on  { background: #7ee787; }
+  .dot.off { background: #ff6b6b; }
+  .btn {
+    background: #1a1a1a; color: #ddd; border: 1px solid #444;
+    padding: 2px 8px; cursor: pointer; font: inherit; margin-right: 4px;
+  }
+  .btn:hover { border-color: #ffb454; color: #ffb454; }
+  .btn.on  { color: #7ee787; border-color: #2f5a38; }
+  .btn.off { color: #ff6b6b; border-color: #5a2f2f; }
+  .btn.danger:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  form {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: #1a1a1a; border: 1px solid #333; padding: 12px;
+    margin-bottom: 16px;
+  }
+  form label { color: #888; }
+  input {
+    background: #111; color: #ddd; border: 1px solid #444;
+    padding: 4px 6px; font: inherit; width: 200px;
+  }
+  input[type=number] { width: 90px; }
+  input[type=checkbox] { width: auto; }
+  #tokenbar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: #1a1a1a; border: 1px solid #ffb454; padding: 12px;
+    margin-bottom: 16px;
+  }
+  #tokenbar.hidden { display: none; }
+  #tokmsg { color: #ffb454; }
+  details#reqlog { margin-bottom: 24px; }
+  details#reqlog summary { color: #ffb454; cursor: pointer; }
+  #reqlog table { margin: 8px 0 0; }
+  .st.ok   { color: #7ee787; }
+  .st.warn { color: #ffb454; }
+  .st.bad  { color: #ff6b6b; }
+  footer { color: #666; margin-top: 24px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="tokenbar" class="hidden">
+  <span id="tokmsg">bearer token</span>
+  <input id="tokinput" type="password" placeholder="FORK_BALANCER_TOKEN">
+  <button id="toksave" class="btn">save</button>
+</div>
+
+<header>
+  <h1>SCARECROW — cloud router &amp; ladder</h1>
+  <div id="ladder">ladder: loading…</div>
+  <div id="fleet" class="dim">fleet: loading…</div>
+  <div id="status"></div>
+</header>
+
+<table>
+  <thead>
+    <tr>
+      <th>name</th><th>host</th><th>model</th><th>key</th>
+      <th>pacing</th><th>weight</th><th>enabled</th><th>waiting</th>
+      <th>req / err</th><th>avg wall</th><th>last wall</th><th></th>
+    </tr>
+  </thead>
+  <tbody id="lanesbody"></tbody>
+</table>
+
+<details id="reqlog" open>
+  <summary>recent requests (last 50)</summary>
+  <table>
+    <thead>
+      <tr>
+        <th>time</th><th>lane</th><th>instance</th>
+        <th>wall</th><th>status</th>
+      </tr>
+    </thead>
+    <tbody id="reqlogbody"></tbody>
+  </table>
+</details>
+
+<form id="addform">
+  <strong>add lane:</strong>
+  <label>name</label><input id="f_name" required>
+  <label>base_url</label><input id="f_base" required placeholder="https://host/v1">
+  <label>model</label><input id="f_model" required>
+  <label>key_env</label><input id="f_keyenv" required placeholder="SOME_API_KEY">
+  <label>min_interval_s</label><input id="f_interval" type="number" step="0.1" min="0.1" value="1.0">
+  <label>weight</label><input id="f_weight" type="number" step="1" value="100">
+  <label>enabled</label><input id="f_enabled" type="checkbox" checked>
+  <button type="submit" class="btn">add</button>
+</form>
+
+<footer>keys live in the container env (key_env), never in this file</footer>
+
+<script>
+"use strict";
+// tokenless (owner, 2026-11-09): access is gated by the Lappy firewall
+// accepts (LAN + VPS tailscale only); no bearer token in the UI.
+const TOKKEY = "scarecrow_token";
+let token = "";
+
+const $ = (id) => document.getElementById(id);
+
+function setStatus(msg, isErr) {
+  $("status").textContent = msg;
+  $("status").className = isErr ? "err" : "";
+}
+
+function showTokenBar(msg) {
+  $("tokenbar").classList.remove("hidden");
+  $("tokmsg").textContent = msg || "enter the bearer token (FORK_BALANCER_TOKEN)";
+  $("tokinput").focus();
+}
+
+function saveToken() {
+  const v = $("tokinput").value.trim();
+  if (!v) { $("tokmsg").textContent = "token is empty"; return; }
+  token = v;
+  localStorage.setItem(TOKKEY, v);
+  $("tokenbar").classList.add("hidden");
+  $("tokinput").value = "";
+  load();
+}
+
+$("toksave").addEventListener("click", saveToken);
+$("tokinput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") saveToken();
+});
+
+async function api(path, body) {
+  const opts = token
+    ? { headers: { "Authorization": "Bearer " + token } }
+    : {};
+  if (body !== undefined) {
+    opts.method = "POST";
+    opts.headers = opts.headers || {};
+    opts.headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch(path, opts);
+  if (r.status === 401) {
+    showTokenBar("401 — token rejected, enter it again");
+    throw new Error("unauthorized");
+  }
+  return r;
+}
+
+async function apiJson(path, body) {
+  const r = await api(path, body);
+  let j = {};
+  try { j = await r.json(); } catch (e) { /* non-json reply */ }
+  if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+
+function hostOf(base) {
+  try { return new URL(base).host; } catch (e) { return base; }
+}
+
+function trunc(s, n) { return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+
+function td(text, cls) {
+  const c = document.createElement("td");
+  c.textContent = text;
+  if (cls) c.className = cls;
+  return c;
+}
+
+// fleet scale (s5.1): lanes grouped by weight tier; queue pressure +
+// per-instance attribution from the /api/lanes fleet fields.
+const TIER_ORDER = { PRIMARY: 0, FALLBACK: 1, BRIDGE: 2 };
+const N_COLS = 12;   // lane-table column count (tier header colspan)
+
+function tierOf(w) {
+  return w >= 50 ? "PRIMARY" : (w >= 20 ? "FALLBACK" : "BRIDGE");
+}
+
+function renderFleet(data) {
+  const fl = $("fleet");
+  fl.textContent = "";
+  const label = document.createElement("span");
+  label.className = "dim";
+  label.textContent = "fleet:";
+  fl.appendChild(label);
+  const insts = data.instances || [];
+  if (!insts.length) {
+    const none = document.createElement("span");
+    none.className = "dim";
+    none.textContent = "no instances seen";
+    fl.appendChild(none);
+  }
+  for (const it of insts) {
+    const chip = document.createElement("span");
+    chip.className = it.last_seen_ago_s <= 120 ? "chip" : "chip stale";
+    chip.title = "lanes used: " + (it.lanes_used || []).join(", ");
+    chip.textContent = it.name + " · " + it.requests + " req · " +
+      it.last_seen_ago_s + "s ago";
+    fl.appendChild(chip);
+  }
+  const recent = data.recent || [];
+  const now = Date.now() / 1000;
+  const perMin = recent.filter((r) => (now - r.t) <= 60).length;
+  const rate = document.createElement("span");
+  rate.id = "fleetrate";
+  rate.textContent = "  " + perMin + " req/min (ring " + recent.length + ")";
+  fl.appendChild(rate);
+}
+
+function row(ln) {
+  const tr = document.createElement("tr");
+  tr.appendChild(td(ln.lane));
+  tr.appendChild(td(hostOf(ln.base_url)));
+  tr.appendChild(td(trunc(ln.model, 28), "dim"));
+  const key = document.createElement("td");
+  const dot = document.createElement("span");
+  dot.className = ln.has_key ? "dot on" : "dot off";
+  dot.title = ln.key_env + (ln.has_key ? " (set)" : " (MISSING)");
+  key.appendChild(dot);
+  tr.appendChild(key);
+  tr.appendChild(td(ln.min_interval_s + "s"));
+  tr.appendChild(td(String(ln.weight)));
+  const en = document.createElement("td");
+  const tog = document.createElement("button");
+  tog.textContent = ln.enabled ? "on" : "off";
+  tog.className = "btn " + (ln.enabled ? "on" : "off");
+  tog.addEventListener("click", () => toggleEnabled(ln));
+  en.appendChild(tog);
+  tr.appendChild(en);
+  const wait = document.createElement("td");
+  wait.className = ln.waiting > 0 ? "wait" : "wait0";
+  wait.textContent = String(ln.waiting || 0);
+  wait.title = "requests waiting on this lane's lock";
+  tr.appendChild(wait);
+  tr.appendChild(td(ln.requests + " / " + ln.errors));
+  tr.appendChild(td(ln.avg_wall_s ? ln.avg_wall_s.toFixed(2) + "s" : "-"));
+  tr.appendChild(td(ln.last_wall_s ? ln.last_wall_s.toFixed(2) + "s" : "-"));
+  const act = document.createElement("td");
+  const probe = document.createElement("button");
+  probe.textContent = "probe";
+  probe.className = "btn";
+  probe.addEventListener("click", () => doProbe(ln.lane));
+  const del = document.createElement("button");
+  del.textContent = "del";
+  del.className = "btn danger";
+  del.addEventListener("click", () => doDelete(ln.lane));
+  act.appendChild(probe);
+  act.appendChild(del);
+  tr.appendChild(act);
+  return tr;
+}
+
+function renderLanes(data) {
+  const tb = $("lanesbody");
+  tb.textContent = "";
+  const lanes = (data.lanes || []).slice().sort((a, b) => {
+    const ta = TIER_ORDER[tierOf(a.weight)], tb2 = TIER_ORDER[tierOf(b.weight)];
+    if (ta !== tb2) return ta - tb2;
+    if (b.weight !== a.weight) return b.weight - a.weight;
+    return a.lane.localeCompare(b.lane);
+  });
+  let cur = null;
+  for (const ln of lanes) {
+    const t = tierOf(ln.weight);
+    if (t !== cur) {
+      cur = t;
+      const hr = document.createElement("tr");
+      hr.className = "tierhead";
+      const c = document.createElement("td");
+      c.colSpan = N_COLS;
+      c.textContent = t;
+      hr.appendChild(c);
+      tb.appendChild(hr);
+    }
+    tb.appendChild(row(ln));
+  }
+}
+
+function hhmmss(t) {
+  const d = new Date(t * 1000);
+  const p = (n) => String(n).padStart(2, "0");
+  return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+
+function statusClass(s) {
+  if (s === "200") return "st ok";
+  if (/^4/.test(s)) return "st warn";
+  return "st bad";   // 5xx / err / anything unknown
+}
+
+function renderLog(data) {
+  const tb = $("reqlogbody");
+  tb.textContent = "";
+  const recent = data.recent || [];
+  if (!recent.length) {
+    const tr = document.createElement("tr");
+    const c = document.createElement("td");
+    c.colSpan = 5;
+    c.className = "dim";
+    c.textContent = "no requests yet";
+    tr.appendChild(c);
+    tb.appendChild(tr);
+    return;
+  }
+  for (const r of recent) {
+    const tr = document.createElement("tr");
+    tr.appendChild(td(hhmmss(r.t), "dim"));
+    tr.appendChild(td(r.lane));
+    tr.appendChild(td(r.instance || "-", "dim"));
+    tr.appendChild(td(r.wall_s.toFixed(2) + "s"));
+    tr.appendChild(td(r.status, statusClass(r.status)));
+    tb.appendChild(tr);
+  }
+}
+
+function render(data) {
+  $("ladder").textContent = "ladder: " +
+    data.ladder.map((n, i) => (i + 1) + ". " + n).join("   ");
+  renderFleet(data);
+  renderLanes(data);
+  renderLog(data);
+}
+
+async function load() {
+  try {
+    render(await apiJson("/api/lanes"));
+  } catch (e) {
+    if (e.message !== "unauthorized")
+      setStatus("load failed: " + e.message, true);
+  }
+}
+
+async function toggleEnabled(ln) {
+  const obj = {
+    name: ln.lane, base_url: ln.base_url, model: ln.model,
+    key_env: ln.key_env, min_interval_s: ln.min_interval_s,
+    weight: ln.weight, enabled: !ln.enabled
+  };
+  setStatus("toggling " + ln.lane + "…");
+  try {
+    await apiJson("/api/lanes", obj);
+    await load();
+    setStatus("lane " + ln.lane + " " + (!ln.enabled ? "enabled" : "disabled"));
+  } catch (e) {
+    if (e.message !== "unauthorized")
+      setStatus("toggle failed: " + e.message, true);
+  }
+}
+
+async function doProbe(name) {
+  setStatus("probing " + name + "…");
+  try {
+    const j = await apiJson("/api/lanes/probe", { name: name });
+    setStatus(j.ok
+      ? "probe " + name + ": ok  wall=" + j.wall_s + "s  out_tok=" +
+        j.out_tok + "  tok/s=" + j.tok_s
+      : "probe " + name + ": FAIL " + (j.error || "?"), !j.ok);
+    await load();
+  } catch (e) {
+    if (e.message !== "unauthorized")
+      setStatus("probe failed: " + e.message, true);
+  }
+}
+
+async function doDelete(name) {
+  if (!confirm("delete lane '" + name + "'?")) return;
+  try {
+    await apiJson("/api/lanes/delete", { name: name });
+    await load();
+    setStatus("lane " + name + " deleted");
+  } catch (e) {
+    if (e.message !== "unauthorized")
+      setStatus("delete failed: " + e.message, true);
+  }
+}
+
+$("addform").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const obj = {
+    name: $("f_name").value.trim(),
+    base_url: $("f_base").value.trim(),
+    model: $("f_model").value.trim(),
+    key_env: $("f_keyenv").value.trim(),
+    min_interval_s: parseFloat($("f_interval").value),
+    weight: parseInt($("f_weight").value, 10),
+    enabled: $("f_enabled").checked
+  };
+  setStatus("adding " + obj.name + "…");
+  try {
+    await apiJson("/api/lanes", obj);
+    $("addform").reset();
+    await load();
+    setStatus("lane " + obj.name + " added");
+  } catch (e) {
+    if (e.message !== "unauthorized")
+      setStatus("add failed: " + e.message, true);
+  }
+});
+
+setInterval(load, 5000);
+load();
+</script>
+</body>
+</html>

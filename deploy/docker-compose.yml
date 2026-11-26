@@ -23,6 +23,7 @@ services:
     volumes:
       - ../source:/app:ro
       - ../config/lanes.json:/app/lanes.json:ro
+      - ../static:/app/static:ro
     environment:
       FORK_BALANCER_HOST: 0.0.0.0
       FORK_BALANCER_PORT: 8486
