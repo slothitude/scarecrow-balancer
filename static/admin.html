@@ -1,570 +1,889 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#090d12">
-<title>ScareCrow // Control</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCARECROW balancer — full control</title>
 <style>
-:root {
-  color-scheme: dark;
-  --bg:#090d12; --panel:#101720; --panel2:#141e29; --line:#253444;
-  --text:#dce7f1; --muted:#8293a5; --green:#4ade80;
-  --amber:#fbbf24; --red:#fb7185; --blue:#60a5fa;
-  --mono: "SFMono-Regular",Consolas,"Liberation Mono",monospace;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px}
-button,input{font:inherit}
-button{cursor:pointer;border:1px solid var(--line);background:#182330;color:var(--text);padding:8px 12px;border-radius:4px}
-button:hover{border-color:var(--blue);background:#203044}
-button:disabled{opacity:.4;cursor:not-allowed}
-button.primary{background:#173b32;border-color:#27694c;color:var(--green)}
-button.danger{border-color:#743544;color:var(--red)}
-button.small{padding:5px 8px;font-size:11px}
-input[type=text],input[type=number],input[type=password]{width:100%;background:#090f16;border:1px solid var(--line);padding:9px;color:var(--text);border-radius:3px;outline:none}
-input:focus{border-color:var(--blue)}
-input[type=checkbox]{accent-color:var(--green);width:16px;height:16px;vertical-align:middle}
-header{padding:18px 24px;border-bottom:1px solid var(--line);background:#0c121a;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:14px}
-.logo{width:38px;height:38px;border:1px solid #327a5a;color:var(--green);display:grid;place-items:center;font-weight:bold;font-size:19px;border-radius:5px}
-h1{font-size:17px;letter-spacing:2px;margin:0}
-.subtitle{color:var(--muted);font-size:10px;margin-top:5px;letter-spacing:1.5px}
-.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.indicator{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}
-.dot{width:8px;height:8px;border-radius:50%;background:#64748b}
-.dot.online{background:var(--green);box-shadow:0 0 9px #4ade8066}
-.dot.offline{background:var(--red)}
-main{max-width:1600px;margin:auto;padding:20px 24px}
-.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
-.metric,.panel{background:var(--panel);border:1px solid var(--line);border-radius:5px}
-.metric{padding:13px 15px}
-.metric-label{color:var(--muted);font-size:10px;letter-spacing:1.2px;text-transform:uppercase}
-.metric-value{font-size:23px;margin-top:9px;color:var(--green)}
-.metric-sub{font-size:10px;color:var(--muted);margin-top:5px}
-.panel{margin-bottom:18px;overflow:hidden}
-.panel-head{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#121b25}
-.panel-title{font-size:12px;letter-spacing:1.3px;font-weight:bold}
-.panel-title:before{content:"// ";color:var(--green)}
-.panel-tools{display:flex;gap:7px;flex-wrap:wrap}
-.panel-body{padding:14px}
-.ladder{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:11px}
-.lane-order{padding:5px 9px;border:1px solid var(--line);border-radius:3px;color:var(--text);background:#101923}
-.lane-order:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:7px}
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:11px}
-th{text-align:left;padding:11px 10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;background:#0d141d;border-bottom:1px solid var(--line)}
-td{padding:11px 10px;border-bottom:1px solid #202d3a;vertical-align:middle}
-tbody tr:hover{background:#15202b}
-.lane-name{font-weight:bold;color:#e5edf5}
-.lane-model{font-size:10px;color:var(--muted);margin-top:4px}
-.tag{font-size:9px;letter-spacing:.6px;padding:3px 5px;border-radius:3px;margin-left:5px;border:1px solid #405268;color:#a5c5e5}
-.tag.browser{border-color:#4b4c88;color:#aaa8ff}
-.tag.cloud{border-color:#8a6335;color:#ffc477}
-.chip{display:inline-flex;align-items:center;gap:5px;border-radius:3px;padding:4px 7px;font-size:10px;border:1px solid currentColor}
-.chip:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
-.healthy{color:var(--green);background:#10251d}
-.cooling{color:var(--amber);background:#292113}
-.disabled{color:#9aa5b1;background:#202832}
-.nokey{color:var(--red);background:#2c151d}
-.actions{display:flex;gap:5px;flex-wrap:wrap}
-.muted{color:var(--muted)}
-.good{color:var(--green)}
-.bad{color:var(--red)}
-.warn{color:var(--amber)}
-.error-line{display:none;padding:10px 14px;background:#29151b;border-bottom:1px solid #70303f;color:#ff9ba9;font-size:11px}
-.error-line.show{display:block}
-.status-line{padding:9px 14px;color:var(--muted);font-size:11px;border-top:1px solid var(--line);min-height:34px}
-.status-line.error{color:var(--red)}
-.status-line.success{color:var(--green)}
-.result{font-size:10px;color:var(--muted);margin-top:5px;white-space:normal;max-width:240px}
-.ring{max-height:370px;overflow:auto}
-.ring table{white-space:nowrap}
-.ring td,.ring th{padding:9px 12px}
-.empty{text-align:center;padding:35px;color:var(--muted)}
-.modal-backdrop{display:none;position:fixed;inset:0;background:#000b;z-index:10;align-items:center;justify-content:center;padding:18px}
-.modal-backdrop.open{display:flex}
-.modal{width:min(600px,100%);max-height:90vh;overflow:auto;background:#101923;border:1px solid #38506a;border-radius:6px;box-shadow:0 20px 80px #000}
-.modal-head{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.modal-head h2{font-size:13px;letter-spacing:1px;margin:0}
-.modal-content{padding:18px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
-.field{display:flex;flex-direction:column;gap:6px}
-.field.full{grid-column:1/-1}
-.field label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
-.form-note{font-size:10px;color:var(--amber);line-height:1.6;margin:14px 0}
-.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line)}
-.token-overlay{display:none;position:fixed;inset:0;background:#070b10ed;z-index:30;align-items:center;justify-content:center;padding:20px}
-.token-overlay.open{display:flex}
-.token-box{width:min(420px,100%);padding:25px;background:var(--panel);border:1px solid #36516a;border-radius:6px}
-.token-box h2{font-size:15px;letter-spacing:1px;margin:0 0 8px}
-.token-box p{color:var(--muted);font-size:11px;line-height:1.7}
-.token-box input{margin:12px 0}
-footer{color:#596b7e;text-align:center;font-size:10px;padding:15px;border-top:1px solid var(--line);letter-spacing:1px}
-@media(max-width:800px){main{padding:13px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}header{padding:14px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
-@media(max-width:420px){.metrics{grid-template-columns:1fr 1fr}.metric-value{font-size:19px}}
+  :root {
+    --bg: #0e100e; --panel: #151815; --panel2: #1a1e1a;
+    --line: #262b26; --line2: #3a403a;
+    --fg: #d7dbd7; --dim: #8a908a; --faint: #5c625c;
+    --ok: #7ee787; --warn: #ffb454; --bad: #ff6b6b;
+    --accent: #ffb454; --bridge: #79c0ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 13px/1.55 ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  }
+  .wrap { max-width: 1560px; margin: 0 auto; padding: 16px; }
+  h1 {
+    color: var(--accent); font-size: 17px; letter-spacing: 1px;
+    margin: 0 0 6px; font-weight: bold;
+  }
+  h1 .sub { color: var(--faint); font-weight: normal; letter-spacing: 0; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;
+  }
+  .hidden { display: none !important; }
+
+  /* header */
+  #hdrmeta { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 4px; }
+  .pill {
+    display: inline-block; padding: 1px 10px; border-radius: 10px;
+    border: 1px solid var(--line2); font-weight: bold;
+  }
+  .pill.ok   { color: var(--ok);   border-color: #2f5a38; background: #16241a; }
+  .pill.bad  { color: var(--bad);  border-color: #5a2f2f; background: #241616; }
+  .pill.unk  { color: var(--dim); }
+  .kv { color: var(--dim); }
+  .kv b { color: var(--fg); font-weight: normal; }
+  #ladder { color: var(--dim); margin: 2px 0 4px; word-spacing: 2px; }
+  #ladder .step { color: var(--ok); white-space: nowrap; }
+  #ladder .step .n { color: var(--faint); }
+  #ladder .step.bridge { color: var(--bridge); }
+  #ladder .step.bridge .brain { color: var(--bridge); font-weight: bold; }
+  #status { min-height: 18px; white-space: pre-wrap; margin-top: 2px; }
+  #status.ok  { color: var(--ok); }
+  #status.warn{ color: var(--warn); }
+  #status.bad { color: var(--bad); }
+
+  /* buttons */
+  .btn {
+    background: var(--panel2); color: var(--fg); border: 1px solid var(--line2);
+    padding: 2px 9px; cursor: pointer; font: inherit; border-radius: 3px;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: 0.45; cursor: default; }
+  .btn.ok    { color: var(--ok);  border-color: #2f5a38; }
+  .btn.off   { color: var(--bad); border-color: #5a2f2f; }
+  .btn.danger:hover { border-color: var(--bad); color: var(--bad); }
+  .btn.mini  { padding: 0 6px; font-size: 12px; }
+
+  /* fleet strip */
+  #fleet { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  #fleet .lbl { color: var(--dim); }
+  .chip {
+    border: 1px solid #2f5a38; background: #16241a; color: var(--ok);
+    padding: 1px 8px; border-radius: 10px; white-space: nowrap;
+  }
+  .chip.stale { border-color: #3a3a3a; background: #161616; color: #888; }
+
+  /* bridge callout */
+  #bridge { border-color: #24405c; background: #101822; }
+  #bridge .bt { color: var(--bridge); font-weight: bold; letter-spacing: 1px; }
+  #bridge .body { color: var(--dim); margin-top: 3px; }
+  #bridge .lane { color: var(--bridge); }
+
+  /* lane table */
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid var(--line); padding: 4px 7px; text-align: left; white-space: nowrap; }
+  th {
+    color: var(--accent); background: #121412; font-weight: bold;
+    position: sticky; top: 0; z-index: 1;
+  }
+  th small { color: var(--faint); font-weight: normal; }
+  td.dim { color: var(--dim); }
+  tr.state-ok       td:first-child { border-left: 3px solid var(--ok); }
+  tr.state-cooldown td:first-child { border-left: 3px solid var(--warn); }
+  tr.state-cooldown td { background: #1e1a12; }
+  tr.state-warn     td:first-child { border-left: 3px solid #b98a3a; }
+  tr.state-disabled td { color: var(--dim); }
+  tr.state-disabled td:first-child { border-left: 3px solid #444; }
+  tr.state-disabled .lane-name { text-decoration: line-through; }
+  tr.tierhead td {
+    color: var(--accent); background: #121412; font-weight: bold;
+    letter-spacing: 2px; border-color: var(--line2); font-size: 12px;
+  }
+  .lane-name { color: var(--fg); }
+  .badge {
+    display: inline-block; margin-left: 6px; padding: 0 7px; font-size: 11px;
+    border-radius: 9px; border: 1px solid #2c4a66; background: #122030;
+    color: var(--bridge);
+  }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+  .dot.on  { background: var(--ok); }
+  .dot.off { background: var(--bad); }
+  td.wait    { color: var(--warn); font-weight: bold; }
+  td.wait0   { color: var(--faint); }
+  td.iss     { color: var(--warn); }
+  td.err     { color: var(--bad); max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+  .probeok   { color: var(--ok); }
+  .probebad  { color: var(--bad); }
+
+  /* ring viewer + probe panel */
+  details summary { color: var(--accent); cursor: pointer; letter-spacing: 1px; }
+  details table { margin-top: 8px; }
+  .note { color: var(--faint); font-size: 12px; }
+  .st.ok   { color: var(--ok); }
+  .st.warn { color: var(--warn); }
+  .st.bad  { color: var(--bad); }
+
+  /* editor */
+  #editor .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 4px 0; }
+  #editor label { color: var(--dim); min-width: 110px; }
+  #editor input[type=text], #editor input[type=number] {
+    background: #101210; color: var(--fg); border: 1px solid var(--line2);
+    padding: 4px 7px; font: inherit; border-radius: 3px;
+  }
+  #editor input[type=text] { width: 300px; }
+  #editor input[type=number] { width: 110px; }
+  #editor .head { color: var(--accent); font-weight: bold; letter-spacing: 1px; }
+  #edit_warn { color: var(--warn); margin-top: 6px; }
+  #edit_carry { color: var(--bridge); margin-top: 2px; }
+  #edit_rename { color: var(--warn); margin-top: 2px; }
+  #edit_err { color: var(--bad); margin-top: 2px; min-height: 16px; }
+
+  /* token gate */
+  #gate { border-color: var(--accent); max-width: 640px; margin: 60px auto; }
+  #gate .head { color: var(--accent); font-weight: bold; margin-bottom: 6px; }
+  #gate_msg { color: var(--warn); margin-bottom: 8px; min-height: 16px; }
+  #gate input {
+    background: #101210; color: var(--fg); border: 1px solid var(--line2);
+    padding: 5px 8px; font: inherit; width: 340px; border-radius: 3px;
+  }
+  #gate .hint { color: var(--faint); margin-top: 8px; }
+
+  footer { color: var(--faint); margin: 16px 0 8px; font-size: 12px; }
 </style>
 </head>
 <body>
-<header>
- <div class="brand">
-  <div class="logo">SC</div>
-  <div><h1>SCARECROW <span style="color:var(--green)">/</span> CONTROL</h1><div class="subtitle">OPENAI-COMPATIBLE ROUTING FABRIC // ADMIN CONSOLE</div></div>
- </div>
- <div class="header-right">
-  <div class="indicator"><span class="dot" id="healthDot"></span><span id="healthText">CONNECTING</span></div>
-  <div class="indicator">REFRESH <span id="refreshText" class="good">5s</span></div>
-  <button class="small" id="pauseBtn" onclick="toggleRefresh()">PAUSE</button>
-  <button class="small" onclick="showToken()">AUTH</button>
- </div>
-</header>
-<main>
- <div class="metrics">
-  <div class="metric"><div class="metric-label">Active instances</div><div class="metric-value" id="activeCount">—</div><div class="metric-sub">RUNNING BACKENDS</div></div>
-  <div class="metric"><div class="metric-label">Lanes</div><div class="metric-value" id="laneCount">—</div><div class="metric-sub">CONFIGURED ROUTES</div></div>
-  <div class="metric"><div class="metric-label">Requests</div><div class="metric-value" id="requestCount">—</div><div class="metric-sub">AGGREGATED LANE COUNTERS</div></div>
-  <div class="metric"><div class="metric-label">Errors</div><div class="metric-value" id="errorCount">—</div><div class="metric-sub">AGGREGATED LANE COUNTERS</div></div>
- </div>
- <section class="panel">
-  <div class="panel-head"><div class="panel-title">ROUTING LADDER</div><span class="muted" id="ladderCount">—</span></div>
-  <div class="panel-body"><div class="ladder" id="ladder"><span class="muted">Awaiting health data...</span></div></div>
- </section>
- <section class="panel">
-  <div class="panel-head">
-   <div class="panel-title">LANE TELEMETRY</div>
-   <div class="panel-tools">
-    <button class="small primary" onclick="openEditor()">+ ADD LANE</button>
-    <button class="small" id="probeAllBtn" onclick="probeAll()">PROBE ALL</button>
-    <button class="small" onclick="reloadLanes()">FORCE RELOAD</button>
-    <button class="small" onclick="refreshAll()">REFRESH</button>
-   </div>
-  </div>
-  <div class="error-line" id="errorLine"></div>
-  <div class="table-wrap">
-   <table>
-    <thead><tr><th>Lane / Brain</th><th>State</th><th>Enabled</th><th>Weight</th><th>Min interval</th><th>Cooldown</th><th>Issues</th><th>Requests / Errors</th><th>Avg wall</th><th>Last error</th><th>Actions</th></tr></thead>
-    <tbody id="laneRows"><tr><td colspan="11" class="empty">CONNECTING TO SCARECROW...</td></tr></tbody>
-   </table>
-  </div>
-  <div class="status-line" id="statusLine">INITIALIZING CONTROL PLANE...</div>
- </section>
- <section class="panel">
-  <div class="panel-head"><div class="panel-title">RECENT REQUEST RING</div><span class="muted">NEWEST 50 EVENTS</span></div>
-  <div class="ring">
-   <table><thead><tr><th>Time</th><th>Lane</th><th>Model</th><th>Wall (s)</th><th>Result</th></tr></thead>
-   <tbody id="recentRows"><tr><td colspan="5" class="empty">No request data yet.</td></tr></tbody></table>
-  </div>
- </section>
-</main>
-<footer>SCARECROW CONTROL PLANE // LOCAL ADMIN INTERFACE // NO EXTERNAL DEPENDENCIES</footer>
 
-<div class="modal-backdrop" id="editorModal">
- <div class="modal">
-  <div class="modal-head"><h2 id="editorTitle">CONFIGURE LANE</h2><button class="small" onclick="closeEditor()">CLOSE ×</button></div>
-  <form id="laneForm">
-   <div class="modal-content">
-    <div class="form-grid">
-     <div class="field"><label for="f_name">Lane name</label><input id="f_name" type="text" required maxlength="120" placeholder="my-lane"></div>
-     <div class="field"><label for="f_model">Model</label><input id="f_model" type="text" required placeholder="model-name"></div>
-     <div class="field full"><label for="f_url">Base URL</label><input id="f_url" type="text" required placeholder="http://127.0.0.1:8080/v1"></div>
-     <div class="field"><label for="f_key">Key environment variable</label><input id="f_key" type="text" required placeholder="API_KEY"></div>
-     <div class="field"><label for="f_interval">Minimum interval (seconds)</label><input id="f_interval" type="number" min="0" step="any" required value="0"></div>
-     <div class="field"><label for="f_weight">Weight</label><input id="f_weight" type="number" min="0" step="any" required value="1"></div>
-     <div class="field"><label>Enabled</label><div style="padding:7px 0"><input type="checkbox" id="f_enabled" checked> <span class="muted">Allow routing to this lane</span></div></div>
-    </div>
-    <div class="form-note">NOTE: timeout_s, extra_body and thinking are dropped by the current loader. They are intentionally not included in this editor payload.</div>
-    <div class="status-line" id="formStatus"></div>
-   </div>
-   <div class="modal-foot"><button type="button" onclick="closeEditor()">CANCEL</button><button type="submit" class="primary">SAVE LANE</button></div>
-  </form>
- </div>
+<div id="gate" class="panel hidden">
+  <div class="head">SCARECROW balancer — bearer token</div>
+  <div id="gate_msg"></div>
+  <input id="tokinput" type="password" placeholder="FORK_BALANCER_TOKEN" autocomplete="off">
+  <button id="toksave" class="btn">save</button>
+  <button id="tokclear" class="btn danger">clear stored</button>
+  <div class="hint">The token is stored in this browser's localStorage only.
+    If the balancer was started with FORK_BALANCER_TOKEN unset (gate off),
+    any non-empty value works — the header is ignored by the server.</div>
 </div>
 
-<div class="token-overlay" id="tokenOverlay">
- <div class="token-box">
-  <h2>AUTHENTICATION REQUIRED</h2>
-  <p>Enter the ScareCrow admin bearer token. It will be stored in this browser's localStorage under <b>scarecrow_token</b>.</p>
-  <form id="tokenForm"><input id="tokenInput" type="password" autocomplete="off" placeholder="Bearer token" required><button class="primary" type="submit" style="width:100%">CONNECT</button></form>
-  <p id="tokenError" class="bad"></p>
- </div>
+<div class="wrap">
+  <header>
+    <h1>SCARECROW balancer <span class="sub">— cloud router &amp; ladder, full control</span></h1>
+    <div id="hdrmeta">
+      <span id="okpill" class="pill unk">?</span>
+      <span class="kv">model <b id="h_model">-</b></span>
+      <span class="kv">active instances <b id="h_inst">-</b></span>
+      <span class="kv">lanes <b id="h_lanes">-</b></span>
+      <button id="btn_auto" class="btn ok">auto: on (5s)</button>
+      <button id="btn_refresh" class="btn">refresh now</button>
+      <span class="kv" id="lastpoll"></span>
+    </div>
+    <div id="ladder">ladder: loading…</div>
+    <div id="status"></div>
+  </header>
+
+  <div id="fleet" class="panel"><span class="lbl">fleet: loading…</span></div>
+
+  <div id="bridge" class="panel hidden">
+    <div class="bt">BRIDGE BRAINS — browser-session lanes</div>
+    <div class="body" id="bridge_body"></div>
+  </div>
+
+  <div id="controls" class="panel">
+    <button id="btn_reload" class="btn">force registry reload</button>
+    <button id="btn_probeall" class="btn">probe all lanes</button>
+    <span class="note" id="probeall_note"></span>
+  </div>
+
+  <div class="panel tablewrap">
+    <table id="lanetable">
+      <thead><tr>
+        <th>lane <small>(brain)</small></th>
+        <th>host</th>
+        <th>model</th>
+        <th>key</th>
+        <th>pace</th>
+        <th>wt</th>
+        <th>enabled</th>
+        <th>cool</th>
+        <th>iss</th>
+        <th>wait</th>
+        <th>req / err</th>
+        <th>avg wall</th>
+        <th>last wall</th>
+        <th>last err</th>
+        <th>probe</th>
+        <th>actions</th>
+      </tr></thead>
+      <tbody id="lanesbody"></tbody>
+    </table>
+  </div>
+
+  <div id="probes" class="panel hidden">
+    <div style="color:var(--accent)">probe results</div>
+    <div id="probe_body"></div>
+  </div>
+
+  <details id="ring" class="panel" open>
+    <summary>recent requests (last 50, newest first)</summary>
+    <div class="note" id="ring_note"></div>
+    <table>
+      <thead><tr>
+        <th>time</th><th>lane</th><th>model</th><th>instance</th>
+        <th>wall</th><th>status</th><th>out tok</th>
+      </tr></thead>
+      <tbody id="ringbody"></tbody>
+    </table>
+  </details>
+
+  <form id="editor" class="panel" autocomplete="off">
+    <div class="head" id="edit_title">add lane</div>
+    <div class="row">
+      <label for="f_name">name</label><input id="f_name" type="text" required>
+      <label for="f_base">base_url</label><input id="f_base" type="text" required placeholder="https://host/v1">
+    </div>
+    <div class="row">
+      <label for="f_model">model</label><input id="f_model" type="text" required>
+      <label for="f_keyenv">key_env</label><input id="f_keyenv" type="text" required placeholder="SOME_API_KEY">
+    </div>
+    <div class="row">
+      <label for="f_interval">min_interval_s</label><input id="f_interval" type="number" step="0.1" min="0.1" value="1.0">
+      <label for="f_weight">weight</label><input id="f_weight" type="number" step="1" value="100">
+      <label for="f_enabled">enabled</label><input id="f_enabled" type="checkbox" checked>
+      <button type="submit" class="btn" id="edit_submit">add lane</button>
+      <button type="button" class="btn" id="edit_cancel">cancel edit</button>
+    </div>
+    <div id="edit_carry" class="hidden"></div>
+    <div id="edit_rename" class="hidden"></div>
+    <div id="edit_warn">timeout_s / extra_body / thinking are accepted by the admin API but silently dropped by
+      the current registry loader on any disk re-read or restart (BALANCER_INTERNALS A.2) —
+      lanes then revert to the 240 s default timeout, no extra_body, thinking off.</div>
+    <div id="edit_err"></div>
+  </form>
+
+  <footer>
+    lane keys live in the container env (key_env) — never in this file, never in the registry.
+    weight is ladder ordering only: dispatch is one flat round-robin (docs §3.2).
+    4xx other than 429 aborts the request instead of failing through (docs §3.4).
+  </footer>
 </div>
 
 <script>
-(() => {
-'use strict';
+"use strict";
 
-const API = '';
-const TOKEN_KEY = 'scarecrow_token';
-const REFRESH_MS = 5000;
-let token = localStorage.getItem(TOKEN_KEY) || '';
-let refreshTimer = null;
+/* ---------- state ---------- */
+const TOKKEY = "scarecrow_admin_token";
+const POLL_MS = 5000;
+let token = localStorage.getItem(TOKKEY) || "";
+let gateOpen = false;
 let paused = false;
-let refreshing = false;
-let lanes = [];
-let recent = [];
-let editorMode = 'add';
+let health = null;          // last /health payload
+let data = null;            // last /api/lanes payload
+let laneMap = {};           // lane name -> snapshot
+let probeResults = {};      // lane name -> {ok, text}
 let probingAll = false;
-let authPrompted = false;
+let editingPrev = null;     // snapshot being edited, or null for add mode
 
-const $ = id => document.getElementById(id);
-const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const number = (v, digits=2) => {
- const n = Number(v);
- return Number.isFinite(n) ? n.toFixed(digits) : '—';
+/* bridge brains: browser-session lanes behind the :8507 web-chat adapter.
+   chatgpt = GPT-6; the set also covers brains not yet in the registry. */
+const BRIDGE_BRAINS = {
+  chatgpt: "GPT-6", deepseek: "DeepSeek", mistral: "Mistral",
+  qwen: "Qwen", gemini: "Gemini", grok: "Grok", kimi: "Kimi"
 };
-const setStatus = (message, type='') => {
- const el = $('statusLine');
- el.textContent = message;
- el.className = 'status-line ' + type;
-};
-const showError = message => {
- const el = $('errorLine');
- el.textContent = 'ERROR // ' + message;
- el.classList.add('show');
- setStatus(message, 'error');
-};
-const clearError = () => $('errorLine').classList.remove('show');
 
-function showToken(message='') {
- $('tokenOverlay').classList.add('open');
- $('tokenError').textContent = message;
- $('tokenInput').value = '';
- authPrompted = true;
- setTimeout(() => $('tokenInput').focus(), 50);
+const $ = (id) => document.getElementById(id);
+
+/* ---------- tiny DOM helpers ---------- */
+function mk(tag, cls, text) {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (text !== undefined && text !== null) el.textContent = String(text);
+  return el;
 }
-function hideToken() {
- $('tokenOverlay').classList.remove('open');
- authPrompted = false;
+function setStatus(msg, cls) {
+  $("status").textContent = msg;
+  $("status").className = cls || "";
 }
-function clearToken(message='Authentication required') {
- token = '';
- localStorage.removeItem(TOKEN_KEY);
- showToken(message);
+function nowHMS() {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+function hhmmss(t) {
+  const d = new Date(t * 1000), p = (n) => String(n).padStart(2, "0");
+  return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+function wallStr(v) { return (typeof v === "number" && v > 0) ? v.toFixed(2) + "s" : "-"; }
+function hostOf(base) {
+  try { return new URL(base).host; } catch (e) { return base || "-"; }
 }
 
-async function api(path, options={}) {
- const headers = new Headers(options.headers || {});
- if (token) headers.set('Authorization', 'Bearer ' + token);
- if (options.body !== undefined) headers.set('Content-Type', 'application/json');
- let response;
- try {
-  response = await fetch(API + path, {...options, headers});
- } catch (e) {
-  throw new Error('Network error: ' + e.message);
- }
- if (response.status === 401 && path.startsWith('/api/')) {
-  clearToken('Token rejected (401). Enter a valid admin token.');
-  throw new Error('Unauthorized. Please authenticate again.');
- }
- const raw = await response.text();
- let data;
- try { data = raw ? JSON.parse(raw) : {}; }
- catch { data = {message:raw}; }
- if (!response.ok) {
-  throw new Error(data.error || data.message || `HTTP ${response.status}`);
- }
- return data;
+/* ---------- bridge detection ---------- */
+function bridgeBrain(ln) {
+  let n = String(ln.lane || "");
+  if (n.indexOf("bridge-") === 0) n = n.slice(7);
+  if (BRIDGE_BRAINS[n]) return BRIDGE_BRAINS[n];
+  const m = String(ln.model || "").toLowerCase();
+  if (String(ln.base_url || "").indexOf(":8507") >= 0)
+    return BRIDGE_BRAINS[m] || ("bridge:" + (ln.model || "?"));
+  return null;
 }
-async function health() {
- const data = await api('/health');
- $('healthDot').className = 'dot online';
- $('healthText').textContent = 'ONLINE';
- $('activeCount').textContent = data.active_instances ?? '—';
- if (Array.isArray(data.ladder)) {
-  $('ladder').innerHTML = data.ladder.length
-   ? data.ladder.map((name,i) => `<span class="lane-order">${i+1}. ${esc(name)}</span>`).join('')
-   : '<span class="muted">No lanes in ladder</span>';
-  $('ladderCount').textContent = data.ladder.length + ' ROUTES';
- }
- if (Array.isArray(data.lanes)) updateMetrics(data.lanes);
- return data;
+
+/* ---------- token gate ---------- */
+function openGate(msg) {
+  gateOpen = true;
+  $("gate_msg").textContent = msg || "";
+  $("gate").classList.remove("hidden");
+  $("tokinput").focus();
 }
-function updateMetrics(data) {
- $('laneCount').textContent = data.length;
- $('requestCount').textContent = data.reduce((s,l)=>s+(Number(l.requests)||0),0);
- $('errorCount').textContent = data.reduce((s,l)=>s+(Number(l.errors)||0),0);
+function closeGate() {
+  gateOpen = false;
+  $("gate").classList.add("hidden");
+  $("tokinput").value = "";
 }
-function brainType(name) {
- const n = String(name).toLowerCase();
- if (n.startsWith('bridge-')) return 'browser';
- if (n === 'nvapi' || n === 'openrouter') return 'cloud';
- return '';
+function saveToken() {
+  const v = $("tokinput").value.trim();
+  if (!v) { $("gate_msg").textContent = "token is empty"; return; }
+  token = v;
+  localStorage.setItem(TOKKEY, v);
+  closeGate();
+  setStatus("token saved", "ok");
+  tick();
 }
-function brainLabel(name) {
- const n = String(name).toLowerCase();
- if (n.startsWith('bridge-')) {
-  const map = {
-   'bridge-chatgpt':'GPT-6',
-   'bridge-deepseek':'DEEPSEEK',
-   'bridge-mistral':'MISTRAL',
-   'bridge-qwen':'QWEN',
-   'bridge-gemini':'GEMINI',
-   'bridge-grok':'GROK',
-   'bridge-kimi':'KIMI'
+function clearStoredToken() {
+  token = "";
+  localStorage.removeItem(TOKKEY);
+  openGate("stored token cleared — enter a new one");
+}
+
+/* ---------- API ---------- */
+class AuthError extends Error {}
+async function api(path, body) {
+  const headers = {};
+  if (token) headers["Authorization"] = "Bearer " + token;
+  const opts = { headers: headers };
+  if (body !== undefined) {
+    opts.method = "POST";
+    headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(body);
+  }
+  let r;
+  try { r = await fetch(path, opts); }
+  catch (e) { throw new Error("network error: " + e.message); }
+  if (r.status === 401) {
+    openGate("401 — bad or missing bearer token");
+    throw new AuthError("unauthorized");
+  }
+  return r;
+}
+async function apiJson(path, body) {
+  const r = await api(path, body);
+  let j = null;
+  try { j = await r.json(); } catch (e) { /* non-json reply */ }
+  if (!r.ok) throw new Error((j && (j.error || j.message)) || ("HTTP " + r.status));
+  return j;
+}
+
+/* ---------- polling ---------- */
+async function tick() {
+  if (gateOpen) return;
+  let h = null, d = null;
+  try {
+    const pair = await Promise.all([apiJson("/health"), apiJson("/api/lanes")]);
+    h = pair[0]; d = pair[1];
+  } catch (e) {
+    if (e instanceof AuthError) return;
+    setStatus("poll failed: " + e.message + " — keeping last data", "bad");
+    if (!$("okpill").classList.contains("bad")) {
+      $("okpill").textContent = "DOWN";
+      $("okpill").className = "pill bad";
+    }
+    return;
+  }
+  health = h; data = d;
+  laneMap = {};
+  for (const ln of (d.lanes || [])) laneMap[ln.lane] = ln;
+  renderAll();
+  $("lastpoll").textContent = "last poll " + nowHMS();
+}
+
+/* ---------- rendering ---------- */
+function tierOf(w) { return w >= 50 ? "PRIMARY" : (w >= 20 ? "FALLBACK" : "TAIL"); }
+const TIER_ORDER = { PRIMARY: 0, FALLBACK: 1, TAIL: 2 };
+const N_COLS = 16;
+
+function sortLanes(lanes) {
+  return (lanes || []).slice().sort((a, b) => {
+    const ta = TIER_ORDER[tierOf(a.weight)], tb = TIER_ORDER[tierOf(b.weight)];
+    if (ta !== tb) return ta - tb;
+    if (b.weight !== a.weight) return b.weight - a.weight;
+    return a.lane.localeCompare(b.lane);
+  });
+}
+
+function stateOf(ln) {
+  if (!ln.enabled) return "disabled";
+  if (ln.cooldown_s > 0) return "cooldown";
+  if (ln.issues > 0 || ln.last_err) return "warn";
+  return "ok";
+}
+
+function renderHeader() {
+  const h = health;
+  if (h && h.ok) {
+    $("okpill").textContent = "OK";
+    $("okpill").className = "pill ok";
+    $("h_model").textContent = h.model || "-";
+    $("h_inst").textContent = String(h.active_instances);
+    $("h_lanes").textContent = String((data && data.lanes || []).length);
+    const ld = $("ladder");
+    ld.textContent = "";
+    ld.appendChild(mk("span", "", "ladder: "));
+    const names = h.ladder || [];
+    if (!names.length) ld.appendChild(mk("span", "dim", "(none enabled)"));
+    names.forEach((n, i) => {
+      const s = mk("span", "step");
+      const ln = laneMap[n];
+      const brain = ln ? bridgeBrain(ln) : (BRIDGE_BRAINS[n.replace(/^bridge-/, "")] || null);
+      if (brain) s.classList.add("bridge");
+      s.appendChild(mk("span", "n", (i + 1) + ". "));
+      s.appendChild(mk("span", "", n));
+      if (brain) s.appendChild(mk("span", "brain", " [" + brain + "]"));
+      if (i < names.length - 1) s.appendChild(document.createTextNode("  "));
+      ld.appendChild(s);
+    });
+  } else if (health === null && data === null) {
+    $("okpill").textContent = "?";
+  }
+}
+
+function renderFleet() {
+  const fl = $("fleet");
+  fl.textContent = "";
+  fl.appendChild(mk("span", "lbl", "fleet: "));
+  const insts = (data && data.instances) || [];
+  if (!insts.length) { fl.appendChild(mk("span", "dim", "no instances seen")); return; }
+  for (const it of insts) {
+    const chip = mk("span", it.last_seen_ago_s <= 120 ? "chip" : "chip stale");
+    chip.title = "lanes used: " + (it.lanes_used || []).join(", ");
+    chip.textContent = it.name + " · " + it.requests + " req · " + it.last_seen_ago_s + "s ago";
+    fl.appendChild(chip);
+  }
+  const recent = (data && data.recent) || [];
+  const now = Date.now() / 1000;
+  const perMin = recent.filter((r) => (now - r.t) <= 60).length;
+  fl.appendChild(mk("span", "dim", "  " + perMin + " req/min (ring " + recent.length + ")"));
+}
+
+function renderBridge() {
+  const box = $("bridge"), body = $("bridge_body");
+  const bridges = sortLanes((data && data.lanes) || []).filter((ln) => bridgeBrain(ln));
+  if (!bridges.length) { box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  body.textContent = "";
+  body.appendChild(mk("span", "", "These lanes are browser-session brains served by the web-chat bridge adapter (:8507), keyless by design (BRIDGE_ADAPTER_NO_KEY sentinel): "));
+  bridges.forEach((ln, i) => {
+    const s = mk("span", "lane", ln.lane + " → " + bridgeBrain(ln));
+    body.appendChild(s);
+    if (i < bridges.length - 1) body.appendChild(document.createTextNode(", "));
+  });
+  body.appendChild(document.createTextNode(". "));
+  body.appendChild(mk("span", "note",
+    "They are slow, session-bound and share one adapter host — probe results here are a liveness check of the browser session, not of the upstream vendor."));
+}
+
+function renderLanes() {
+  const tb = $("lanesbody");
+  tb.textContent = "";
+  const lanes = sortLanes((data && data.lanes) || []);
+  if (!lanes.length) {
+    const tr = document.createElement("tr");
+    const c = mk("td", "dim", "no lanes in the registry");
+    c.colSpan = N_COLS;
+    tr.appendChild(c);
+    tb.appendChild(tr);
+    return;
+  }
+  let cur = null;
+  for (const ln of lanes) {
+    const t = tierOf(ln.weight);
+    if (t !== cur) {
+      cur = t;
+      const hr = document.createElement("tr");
+      hr.className = "tierhead";
+      const c = document.createElement("td");
+      c.colSpan = N_COLS;
+      c.textContent = t + " TIER (weight >= " + (t === "PRIMARY" ? 50 : t === "FALLBACK" ? 20 : 0) + ")";
+      hr.appendChild(c);
+      tb.appendChild(hr);
+    }
+    tb.appendChild(rowFor(ln));
+  }
+}
+
+function rowFor(ln) {
+  const tr = document.createElement("tr");
+  tr.className = "state-" + stateOf(ln);
+
+  const nameTd = mk("td");
+  nameTd.appendChild(mk("span", "lane-name", ln.lane));
+  const brain = bridgeBrain(ln);
+  if (brain) {
+    nameTd.appendChild(mk("span", "badge", "BRIDGE · " + brain));
+    nameTd.title = "browser-session bridge brain";
+  }
+  tr.appendChild(nameTd);
+
+  tr.appendChild(mk("td", "dim", hostOf(ln.base_url)));
+  tr.appendChild(mk("td", "dim", ln.model || "-"));
+
+  const key = document.createElement("td");
+  const dot = mk("span", ln.has_key ? "dot on" : "dot off");
+  dot.title = ln.key_env + (ln.has_key ? " (set)" : " (MISSING — requests go out with no auth header)");
+  key.appendChild(dot);
+  key.appendChild(mk("span", "dim", " " + ln.key_env));
+  tr.appendChild(key);
+
+  tr.appendChild(mk("td", "", ln.min_interval_s + "s"));
+  tr.appendChild(mk("td", "dim", String(ln.weight)));
+
+  const en = document.createElement("td");
+  const tog = mk("button", "btn mini " + (ln.enabled ? "ok" : "off"), ln.enabled ? "on" : "off");
+  tog.addEventListener("click", () => toggleEnabled(ln));
+  en.appendChild(tog);
+  tr.appendChild(en);
+
+  tr.appendChild(mk("td", ln.cooldown_s > 0 ? "iss" : "dim",
+    ln.cooldown_s > 0 ? Math.round(ln.cooldown_s) + "s" : "-"));
+  tr.appendChild(mk("td", ln.issues > 0 ? "iss" : "dim", String(ln.issues)));
+
+  const wait = document.createElement("td");
+  wait.className = ln.waiting > 0 ? "wait" : "wait0";
+  wait.textContent = String(ln.waiting || 0);
+  wait.title = "requests waiting on this lane's lock";
+  tr.appendChild(wait);
+
+  tr.appendChild(mk("td", "", ln.requests + " / " + ln.errors));
+  tr.appendChild(mk("td", "dim", wallStr(ln.avg_wall_s)));
+  tr.appendChild(mk("td", "dim", wallStr(ln.last_wall_s)));
+
+  tr.appendChild(mk("td", ln.last_err ? "err" : "dim", ln.last_err || "-")).title = ln.last_err || "";
+
+  const pr = document.createElement("td");
+  const res = probeResults[ln.lane];
+  if (res) {
+    pr.appendChild(mk("span", res.ok ? "probeok" : "probebad", res.text));
+    pr.title = res.text;
+  } else {
+    pr.appendChild(mk("span", "dim", "-"));
+  }
+  tr.appendChild(pr);
+
+  const act = document.createElement("td");
+  const bProbe = mk("button", "btn mini", "probe");
+  bProbe.addEventListener("click", () => probeLane(ln.lane));
+  const bReset = mk("button", "btn mini", "reset");
+  bReset.title = "clear cooldown + issues";
+  bReset.addEventListener("click", () => resetLane(ln.lane));
+  const bEdit = mk("button", "btn mini", "edit");
+  bEdit.addEventListener("click", () => openEditor(ln));
+  const bDel = mk("button", "btn mini danger", "del");
+  bDel.addEventListener("click", () => deleteLane(ln.lane));
+  act.appendChild(bProbe); act.appendChild(document.createTextNode(" "));
+  act.appendChild(bReset); act.appendChild(document.createTextNode(" "));
+  act.appendChild(bEdit); act.appendChild(document.createTextNode(" "));
+  act.appendChild(bDel);
+  tr.appendChild(act);
+
+  return tr;
+}
+
+function renderProbes() {
+  const names = Object.keys(probeResults);
+  $("probes").classList.toggle("hidden", !names.length);
+  if (!names.length) return;
+  const body = $("probe_body");
+  body.textContent = "";
+  for (const n of names) {
+    const r = probeResults[n];
+    body.appendChild(mk("span", r.ok ? "probeok" : "probebad", n + ": " + r.text));
+    body.appendChild(document.createTextNode("   "));
+  }
+}
+
+function statusClass(s) {
+  if (s === "200") return "st ok";
+  if (s === "429") return "st warn";
+  return "st bad";   // 5xx / numeric 4xx / "err"
+}
+function modelOf(laneName) {
+  const ln = laneMap[laneName];
+  return ln ? ln.model : "-";
+}
+
+function renderRing() {
+  const recent = (data && data.recent) || [];
+  $("ring_note").textContent = recent.length
+    ? "(model is derived from the lane's current config — the ring does not record it)"
+    : "";
+  const tb = $("ringbody");
+  tb.textContent = "";
+  if (!recent.length) {
+    const tr = document.createElement("tr");
+    const c = mk("td", "dim", "no requests yet");
+    c.colSpan = 7;
+    tr.appendChild(c);
+    tb.appendChild(tr);
+    return;
+  }
+  for (const r of recent) {
+    const tr = document.createElement("tr");
+    tr.appendChild(mk("td", "dim", hhmmss(r.t)));
+    const laneTd = mk("td", "", r.lane);
+    const ln = laneMap[r.lane];
+    if (ln && bridgeBrain(ln)) laneTd.appendChild(mk("span", "badge", "BRIDGE"));
+    tr.appendChild(laneTd);
+    tr.appendChild(mk("td", "dim", modelOf(r.lane)));
+    tr.appendChild(mk("td", "dim", r.instance || "-"));
+    tr.appendChild(mk("td", "", (typeof r.wall_s === "number" ? r.wall_s.toFixed(2) : "-") + "s"));
+    tr.appendChild(mk("td", statusClass(r.status), String(r.status)));
+    tr.appendChild(mk("td", "dim", (r.out_tok === undefined || r.out_tok === null) ? "-" : String(r.out_tok)));
+    tb.appendChild(tr);
+  }
+}
+
+function renderAll() {
+  renderHeader();
+  renderFleet();
+  renderBridge();
+  renderLanes();
+  renderProbes();
+  renderRing();
+}
+
+/* ---------- lane actions ---------- */
+function payloadFromSnapshot(ln, enabled) {
+  const obj = {
+    name: ln.lane, base_url: ln.base_url, model: ln.model,
+    key_env: ln.key_env, min_interval_s: ln.min_interval_s,
+    weight: ln.weight, enabled: enabled
   };
-  return map[n] || 'BROWSER';
- }
- if (n === 'nvapi') return 'NEMOTRON';
- if (n === 'openrouter') return 'OPENROUTER';
- return '';
+  return carryOptional(ln, obj);
 }
-function stateFor(lane) {
- if (!lane.enabled) return ['disabled','DISABLED'];
- if (!lane.has_key) return ['nokey','NO KEY'];
- if (Number(lane.cooldown_s)>0) return ['cooling','COOLING'];
- return ['healthy','HEALTHY'];
+/* keep the optional three alive across admin writes: the admin API accepts
+   them, but an upsert that omits them silently strips them from the file. */
+function carryOptional(prev, obj) {
+  if (!prev) return obj;
+  if (typeof prev.timeout_s === "number" && isFinite(prev.timeout_s) && prev.timeout_s > 0)
+    obj.timeout_s = prev.timeout_s;
+  if (prev.extra_body && typeof prev.extra_body === "object" && !Array.isArray(prev.extra_body))
+    obj.extra_body = prev.extra_body;
+  if (prev.thinking === "off" || prev.thinking === "low" || prev.thinking === "high")
+    obj.thinking = prev.thinking;
+  return obj;
 }
-function renderLanes(data) {
- lanes = Array.isArray(data) ? data : [];
- updateMetrics(lanes);
- if (!lanes.length) {
-  $('laneRows').innerHTML = '<tr><td colspan="11" class="empty">NO LANES CONFIGURED // ADD A LANE TO BEGIN</td></tr>';
-  return;
- }
- $('laneRows').innerHTML = lanes.map((l,i) => {
-  const name = String(l.lane ?? l.name ?? '');
-  const [state,label] = stateFor(l);
-  const type = brainType(name);
-  const brain = brainLabel(name);
-  const stateHtml = `<span class="chip ${state}">${label}</span>`;
-  const lastErr = l.last_err ? esc(l.last_err) : '<span class="muted">—</span>';
-  return `<tr data-lane="${esc(name)}">
-   <td><div class="lane-name">${esc(name)}</div><div class="lane-model">${esc(l.model || '—')}${brain ? `<span class="tag ${type}">${esc(type==='browser'?'BROWSER BRAIN':'CLOUD')} · ${esc(brain)}</span>`:''}</div></td>
-   <td>${stateHtml}</td>
-   <td><input type="checkbox" aria-label="Enable ${esc(name)}" ${l.enabled?'checked':''} onchange="toggleLane('${esc(name)}',this.checked)"></td>
-   <td>${esc(l.weight ?? '—')}</td>
-   <td>${number(l.min_interval_s,2)}s</td>
-   <td class="${Number(l.cooldown_s)>0?'warn':'muted'}">${number(l.cooldown_s,1)}s</td>
-   <td>${esc(l.issues ?? 0)}</td>
-   <td><span class="good">${esc(l.requests ?? 0)}</span> / <span class="bad">${esc(l.errors ?? 0)}</span></td>
-   <td>${number(l.avg_wall_s,3)}s</td>
-   <td><span title="${lastErr === '<span class="muted">—</span>' ? '' : lastErr}">${l.last_err ? esc(String(l.last_err).slice(0,90)) : '<span class="muted">—</span>'}</span></td>
-   <td><div class="actions">
-    <button class="small" onclick="probeLane('${esc(name)}')">PROBE</button>
-    <button class="small" onclick="resetLane('${esc(name)}')">RESET</button>
-    <button class="small" onclick="editLane('${esc(name)}')">EDIT</button>
-    <button class="small danger" onclick="deleteLane('${esc(name)}')">DEL</button>
-   </div><div class="result" id="result-${i}"></div></td>
-  </tr>`;
- }).join('');
-}
-function renderRecent(rows) {
- recent = Array.isArray(rows) ? rows.slice(0,50) : [];
- if (!recent.length) {
-  $('recentRows').innerHTML = '<tr><td colspan="5" class="empty">NO REQUESTS RECORDED</td></tr>';
-  return;
- }
- $('recentRows').innerHTML = recent.map(r => {
-  const ok = r.ok === true || r.success === true;
-  const time = r.time ?? r.timestamp ?? r.created_at ?? r.ts ?? '—';
-  let formatted = time;
-  if (typeof time === 'number') {
-   const d = new Date(time > 1e12 ? time : time * 1000);
-   formatted = Number.isNaN(d.getTime()) ? time : d.toLocaleString();
-  } else if (typeof time === 'string' && time !== '—') {
-   const d = new Date(time);
-   if (!Number.isNaN(d.getTime())) formatted = d.toLocaleString();
-  }
-  return `<tr>
-   <td class="muted">${esc(formatted)}</td>
-   <td>${esc(r.lane ?? '—')}</td>
-   <td>${esc(r.model ?? '—')}</td>
-   <td>${number(r.wall_s,3)}</td>
-   <td><span class="${ok?'good':'bad'}">${ok?'OK':'FAIL'}</span></td>
-  </tr>`;
- }).join('');
-}
-async function refreshAll() {
- if (refreshing || !token || authPrompted) return;
- refreshing = true;
- try {
-  clearError();
-  const [h,d] = await Promise.all([health(),api('/api/lanes')]);
-  renderLanes(d.lanes || h.lanes || []);
-  renderRecent(d.recent || []);
-  $('healthDot').className = 'dot online';
-  $('healthText').textContent = 'ONLINE';
-  setStatus('SYNC OK // ' + new Date().toLocaleTimeString() + ' // AUTO-REFRESH 5S', 'success');
- } catch(e) {
-  if (!authPrompted) {
-   $('healthDot').className = 'dot offline';
-   $('healthText').textContent = 'OFFLINE';
-   showError(e.message);
-  }
- } finally {
-  refreshing = false;
- }
-}
-function startRefresh() {
- if (refreshTimer) clearInterval(refreshTimer);
- refreshTimer = setInterval(() => { if (!paused) refreshAll(); }, REFRESH_MS);
-}
-function toggleRefresh() {
- paused = !paused;
- $('pauseBtn').textContent = paused ? 'RESUME' : 'PAUSE';
- $('refreshText').textContent = paused ? 'PAUSED' : '5s';
- if (!paused) refreshAll();
-}
-async function reloadLanes() {
- try {
-  setStatus('RELOADING LANE CONFIGURATION...');
-  await api('/api/lanes/reload',{method:'POST',body:JSON.stringify({})});
-  await refreshAll();
-  setStatus('LANE CONFIGURATION RELOADED', 'success');
- } catch(e) { showError(e.message); }
-}
-function openEditor(lane=null) {
- editorMode = lane ? 'edit' : 'add';
- $('editorTitle').textContent = lane ? 'EDIT LANE // ' + lane.lane : 'ADD NEW LANE';
- $('laneForm').reset();
- $('f_name').disabled = false;
- $('f_interval').value = lane?.min_interval_s ?? 0;
- $('f_weight').value = lane?.weight ?? 1;
- $('f_enabled').checked = lane?.enabled ?? true;
- $('f_name').value = lane?.lane ?? '';
- $('f_url').value = lane?.base_url ?? '';
- $('f_model').value = lane?.model ?? '';
- $('f_key').value = lane?.key_env ?? '';
- $('formStatus').textContent = '';
- $('formStatus').className = 'status-line';
- $('editorModal').classList.add('open');
-}
-function closeEditor() { $('editorModal').classList.remove('open'); }
-function editLane(name) {
- const lane = lanes.find(l => (l.lane || l.name) === name);
- if (lane) openEditor(lane);
-}
-$('laneForm').addEventListener('submit',async e=>{
- e.preventDefault();
- const lane = {
-  name:$('f_name').value.trim(),
-  base_url:$('f_url').value.trim(),
-  model:$('f_model').value.trim(),
-  key_env:$('f_key').value.trim(),
-  min_interval_s:Number($('f_interval').value),
-  weight:Number($('f_weight').value),
-  enabled:$('f_enabled').checked
- };
- const status = $('formStatus');
- if (!lane.name || !lane.base_url || !lane.model || !lane.key_env ||
-     !Number.isFinite(lane.min_interval_s) || lane.min_interval_s<0 ||
-     !Number.isFinite(lane.weight) || lane.weight<0) {
-  status.textContent = 'Invalid input. Check required fields and numeric values.';
-  status.className = 'status-line error';
-  return;
- }
- try {
-  status.textContent = 'SAVING...';
-  await api('/api/lanes',{method:'POST',body:JSON.stringify(lane)});
-  status.textContent = 'SAVED SUCCESSFULLY';
-  status.className = 'status-line success';
-  await refreshAll();
-  setTimeout(closeEditor,400);
- } catch(err) {
-  status.textContent = 'SAVE FAILED // ' + err.message;
-  status.className = 'status-line error';
- }
-});
-async function toggleLane(name,enabled) {
- const lane = lanes.find(l=>(l.lane || l.name)===name);
- if (!lane) return;
- const payload = {
-  name,
-  base_url:lane.base_url,
-  model:lane.model,
-  key_env:lane.key_env,
-  min_interval_s:lane.min_interval_s,
-  weight:lane.weight,
-  enabled
- };
- try {
-  await api('/api/lanes',{method:'POST',body:JSON.stringify(payload)});
-  setStatus(name + ' // ' + (enabled?'ENABLED':'DISABLED'), 'success');
-  await refreshAll();
- } catch(e) {
-  showError('Could not update ' + name + ': ' + e.message);
-  await refreshAll();
- }
-}
-async function probeLane(name) {
- const index = lanes.findIndex(l=>(l.lane || l.name)===name);
- const result = $('result-'+index);
- if (result) result.textContent = 'PROBING...';
- try {
-  const data = await api('/api/lanes/probe',{method:'POST',body:JSON.stringify({name})});
-  const message = data.ok
-   ? `OK // ${number(data.wall_s,3)}s // ${data.out_tok ?? '—'} tokens // ${number(data.tok_s,2)} tok/s`
-   : 'FAIL // ' + (data.error || 'Unknown error');
-  if (result) result.textContent = message;
-  setStatus(name + ' // ' + message, data.ok?'success':'error');
-  await refreshAll();
- } catch(e) {
-  if (result) result.textContent = 'ERROR // ' + e.message;
-  showError(name + ' probe: ' + e.message);
- }
-}
-async function probeAll() {
- if (probingAll) return;
- probingAll = true;
- const btn = $('probeAllBtn');
- btn.disabled = true;
- try {
-  const names = lanes.map(l=>l.lane || l.name);
-  for (const name of names) {
-   if (authPrompted) break;
-   setStatus('PROBE ALL // ' + name);
-   await probeLane(name);
-  }
-  setStatus('PROBE ALL COMPLETE', 'success');
- } finally {
-  probingAll = false;
-  btn.disabled = false;
-  await refreshAll();
- }
-}
-async function resetLane(name) {
- try {
-  setStatus('RESETTING ' + name + '...');
-  const data = await api('/api/lanes/reset',{method:'POST',body:JSON.stringify({name})});
-  setStatus(`${name} RESET // COOLDOWN ${number(data.cooldown_s,2)}s // ISSUES ${data.issues ?? '—'}`, 'success');
-  await refreshAll();
- } catch(e) { showError(e.message); }
-}
-async function deleteLane(name) {
- if (!confirm('Delete lane "' + name + '"? This cannot be undone.')) return;
- try {
-  await api('/api/lanes/delete',{method:'POST',body:JSON.stringify({name})});
-  setStatus(name + ' DELETED', 'success');
-  await refreshAll();
- } catch(e) { showError(e.message); }
-}
-$('tokenForm').addEventListener('submit',async e=>{
- e.preventDefault();
- const value = $('tokenInput').value.trim();
- if (!value) return;
- token = value;
- localStorage.setItem(TOKEN_KEY,token);
- hideToken();
- await refreshAll();
-});
-window.toggleRefresh = toggleRefresh;
-window.showToken = showToken;
-window.refreshAll = refreshAll;
-window.reloadLanes = reloadLanes;
-window.openEditor = openEditor;
-window.closeEditor = closeEditor;
-window.editLane = editLane;
-window.toggleLane = toggleLane;
-window.probeLane = probeLane;
-window.probeAll = probeAll;
-window.resetLane = resetLane;
-window.deleteLane = deleteLane;
 
-$('editorModal').addEventListener('click',e=>{if(e.target===$('editorModal'))closeEditor()});
-startRefresh();
-if (token) refreshAll();
-else showToken();
-})();
+async function toggleEnabled(ln) {
+  setStatus("toggling " + ln.lane + "…", "warn");
+  try {
+    await apiJson("/api/lanes", payloadFromSnapshot(ln, !ln.enabled));
+    setStatus("lane " + ln.lane + " " + (!ln.enabled ? "enabled" : "disabled"), "ok");
+    await tick();
+  } catch (e) {
+    if (!(e instanceof AuthError)) setStatus("toggle failed: " + e.message, "bad");
+  }
+}
+
+async function probeLane(name) {
+  setStatus("probing " + name + "…", "warn");
+  try {
+    const j = await apiJson("/api/lanes/probe", { name: name });
+    probeResults[name] = j.ok
+      ? { ok: true,  text: "ok " + j.wall_s + "s · " + j.out_tok + "tok · " + j.tok_s + "tok/s" }
+      : { ok: false, text: "FAIL " + (j.error || "?") };
+    renderProbes();
+    renderLanes();
+    setStatus("probe " + name + ": " + probeResults[name].text, j.ok ? "ok" : "bad");
+    await tick();
+  } catch (e) {
+    if (!(e instanceof AuthError)) setStatus("probe failed: " + e.message, "bad");
+  }
+}
+
+async function resetLane(name) {
+  setStatus("resetting " + name + "…", "warn");
+  try {
+    const j = await apiJson("/api/lanes/reset", { name: name });
+    delete probeResults[name];
+    setStatus("reset " + (j.lane || name) + ": issues=" + j.issues + " cooldown=" + j.cooldown_s + "s", "ok");
+    await tick();
+  } catch (e) {
+    if (!(e instanceof AuthError)) setStatus("reset failed: " + e.message, "bad");
+  }
+}
+
+async function deleteLane(name) {
+  if (!confirm("delete lane '" + name + "'? This removes it from the registry file.")) return;
+  setStatus("deleting " + name + "…", "warn");
+  try {
+    await apiJson("/api/lanes/delete", { name: name });
+    delete probeResults[name];
+    if (editingPrev && editingPrev.lane === name) resetEditor();
+    setStatus("lane " + name + " deleted", "ok");
+    await tick();
+  } catch (e) {
+    if (!(e instanceof AuthError)) setStatus("delete failed: " + e.message, "bad");
+  }
+}
+
+async function forceReload() {
+  setStatus("forcing registry re-read…", "warn");
+  try {
+    await apiJson("/api/lanes/reload", {});
+    setStatus("registry re-read complete", "ok");
+    await tick();
+  } catch (e) {
+    if (!(e instanceof AuthError)) setStatus("reload failed: " + e.message, "bad");
+  }
+}
+
+async function probeAll() {
+  if (probingAll) return;
+  const lanes = sortLanes((data && data.lanes) || []);
+  if (!lanes.length) { setStatus("no lanes to probe", "warn"); return; }
+  probingAll = true;
+  $("btn_probeall").disabled = true;
+  let i = 0, okc = 0;
+  for (const ln of lanes) {
+    i++;
+    setStatus("probe all " + i + "/" + lanes.length + ": " + ln.lane + "…", "warn");
+    try {
+      const j = await apiJson("/api/lanes/probe", { name: ln.lane });
+      probeResults[ln.lane] = j.ok
+        ? { ok: true,  text: "ok " + j.wall_s + "s · " + j.out_tok + "tok · " + j.tok_s + "tok/s" }
+        : { ok: false, text: "FAIL " + (j.error || "?") };
+      if (j.ok) okc++;
+    } catch (e) {
+      if (e instanceof AuthError) { probingAll = false; $("btn_probeall").disabled = false; return; }
+      probeResults[ln.lane] = { ok: false, text: "ERR " + e.message };
+    }
+    renderProbes();
+    renderLanes();
+  }
+  probingAll = false;
+  $("btn_probeall").disabled = false;
+  const all = okc === lanes.length;
+  setStatus("probe all done: " + okc + "/" + lanes.length + " ok", all ? "ok" : "warn");
+  $("probeall_note").textContent = "last run " + nowHMS() + ": " + okc + "/" + lanes.length + " ok";
+  await tick();
+}
+
+/* ---------- lane editor ---------- */
+function resetEditor() {
+  editingPrev = null;
+  $("edit_title").textContent = "add lane";
+  $("edit_submit").textContent = "add lane";
+  $("f_name").value = ""; $("f_base").value = "";
+  $("f_model").value = ""; $("f_keyenv").value = "";
+  $("f_interval").value = "1.0"; $("f_weight").value = "100";
+  $("f_enabled").checked = true;
+  $("edit_carry").classList.add("hidden");
+  $("edit_rename").classList.add("hidden");
+  $("edit_err").textContent = "";
+}
+function openEditor(ln) {
+  editingPrev = ln;
+  $("edit_title").textContent = "edit lane: " + ln.lane;
+  $("edit_submit").textContent = "save lane";
+  $("f_name").value = ln.lane;
+  $("f_base").value = ln.base_url;
+  $("f_model").value = ln.model;
+  $("f_keyenv").value = ln.key_env;
+  $("f_interval").value = String(ln.min_interval_s);
+  $("f_weight").value = String(ln.weight);
+  $("f_enabled").checked = !!ln.enabled;
+  const carry = [];
+  if (typeof ln.timeout_s === "number") carry.push("timeout_s=" + ln.timeout_s + "s");
+  if (ln.extra_body) carry.push("extra_body=" + JSON.stringify(ln.extra_body));
+  if (ln.thinking && ln.thinking !== "off") carry.push("thinking=" + ln.thinking);
+  $("edit_carry").textContent = carry.length
+    ? "keeping existing " + carry.join(", ") + " on save (kept in the file; not editable in this form)"
+    : "";
+  $("edit_carry").classList.toggle("hidden", !carry.length);
+  $("edit_rename").classList.add("hidden");
+  $("edit_err").textContent = "";
+  $("editor").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("f_base").focus();
+}
+
+async function submitEditor(ev) {
+  ev.preventDefault();
+  const obj = {
+    name: $("f_name").value.trim(),
+    base_url: $("f_base").value.trim(),
+    model: $("f_model").value.trim(),
+    key_env: $("f_keyenv").value.trim(),
+    min_interval_s: parseFloat($("f_interval").value),
+    weight: parseInt($("f_weight").value, 10),
+    enabled: $("f_enabled").checked
+  };
+  const errEl = $("edit_err");
+  if (!obj.name || !obj.base_url || !obj.model || !obj.key_env) {
+    errEl.textContent = "name, base_url, model and key_env must be non-empty";
+    return;
+  }
+  if (!(obj.min_interval_s > 0)) {
+    errEl.textContent = "min_interval_s must be a positive number (the admin API requires it — the file-loader default does not apply here)";
+    return;
+  }
+  if (!Number.isInteger(obj.weight)) {
+    errEl.textContent = "weight must be an integer";
+    return;
+  }
+  errEl.textContent = "";
+  carryOptional(editingPrev, obj);
+
+  const renamed = editingPrev && obj.name !== editingPrev.lane;
+  setStatus((editingPrev ? "saving " : "adding ") + obj.name + "…", "warn");
+  try {
+    await apiJson("/api/lanes", obj);
+    if (renamed) {
+      $("edit_rename").textContent =
+        "name changed: '" + editingPrev.lane + "' was NOT removed — the upsert added '" + obj.name +
+        "' as a new lane. Delete the old one separately if that was not intended.";
+      $("edit_rename").classList.remove("hidden");
+    } else {
+      $("edit_rename").classList.add("hidden");
+    }
+    resetEditor();
+    setStatus("lane " + obj.name + " saved", "ok");
+    await tick();
+  } catch (e) {
+    if (!(e instanceof AuthError)) errEl.textContent = "save failed: " + e.message;
+  }
+}
+
+/* ---------- wiring ---------- */
+$("toksave").addEventListener("click", saveToken);
+$("tokclear").addEventListener("click", clearStoredToken);
+$("tokinput").addEventListener("keydown", (e) => { if (e.key === "Enter") saveToken(); });
+
+$("btn_auto").addEventListener("click", () => {
+  paused = !paused;
+  const b = $("btn_auto");
+  b.textContent = paused ? "auto: paused" : "auto: on (5s)";
+  b.className = paused ? "btn off" : "btn ok";
+});
+$("btn_refresh").addEventListener("click", () => tick());
+$("btn_reload").addEventListener("click", () => forceReload());
+$("btn_probeall").addEventListener("click", () => probeAll());
+$("editor").addEventListener("submit", submitEditor);
+$("edit_cancel").addEventListener("click", resetEditor);
+
+setInterval(tick, POLL_MS);
+
+/* boot */
+if (token) {
+  tick();
+} else {
+  openGate("enter the bearer token (FORK_BALANCER_TOKEN)");
+}
 </script>
 </body>
 </html>

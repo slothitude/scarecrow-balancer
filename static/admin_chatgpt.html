@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090d12">
+<title>ScareCrow // Control</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#090d12; --panel:#101720; --panel2:#141e29; --line:#253444;
+  --text:#dce7f1; --muted:#8293a5; --green:#4ade80;
+  --amber:#fbbf24; --red:#fb7185; --blue:#60a5fa;
+  --mono: "SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px}
+button,input{font:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#182330;color:var(--text);padding:8px 12px;border-radius:4px}
+button:hover{border-color:var(--blue);background:#203044}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:#173b32;border-color:#27694c;color:var(--green)}
+button.danger{border-color:#743544;color:var(--red)}
+button.small{padding:5px 8px;font-size:11px}
+input[type=text],input[type=number],input[type=password]{width:100%;background:#090f16;border:1px solid var(--line);padding:9px;color:var(--text);border-radius:3px;outline:none}
+input:focus{border-color:var(--blue)}
+input[type=checkbox]{accent-color:var(--green);width:16px;height:16px;vertical-align:middle}
+header{padding:18px 24px;border-bottom:1px solid var(--line);background:#0c121a;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:38px;height:38px;border:1px solid #327a5a;color:var(--green);display:grid;place-items:center;font-weight:bold;font-size:19px;border-radius:5px}
+h1{font-size:17px;letter-spacing:2px;margin:0}
+.subtitle{color:var(--muted);font-size:10px;margin-top:5px;letter-spacing:1.5px}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.indicator{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}
+.dot{width:8px;height:8px;border-radius:50%;background:#64748b}
+.dot.online{background:var(--green);box-shadow:0 0 9px #4ade8066}
+.dot.offline{background:var(--red)}
+main{max-width:1600px;margin:auto;padding:20px 24px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.metric,.panel{background:var(--panel);border:1px solid var(--line);border-radius:5px}
+.metric{padding:13px 15px}
+.metric-label{color:var(--muted);font-size:10px;letter-spacing:1.2px;text-transform:uppercase}
+.metric-value{font-size:23px;margin-top:9px;color:var(--green)}
+.metric-sub{font-size:10px;color:var(--muted);margin-top:5px}
+.panel{margin-bottom:18px;overflow:hidden}
+.panel-head{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#121b25}
+.panel-title{font-size:12px;letter-spacing:1.3px;font-weight:bold}
+.panel-title:before{content:"// ";color:var(--green)}
+.panel-tools{display:flex;gap:7px;flex-wrap:wrap}
+.panel-body{padding:14px}
+.ladder{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:11px}
+.lane-order{padding:5px 9px;border:1px solid var(--line);border-radius:3px;color:var(--text);background:#101923}
+.lane-order:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:7px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:11px}
+th{text-align:left;padding:11px 10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;background:#0d141d;border-bottom:1px solid var(--line)}
+td{padding:11px 10px;border-bottom:1px solid #202d3a;vertical-align:middle}
+tbody tr:hover{background:#15202b}
+.lane-name{font-weight:bold;color:#e5edf5}
+.lane-model{font-size:10px;color:var(--muted);margin-top:4px}
+.tag{font-size:9px;letter-spacing:.6px;padding:3px 5px;border-radius:3px;margin-left:5px;border:1px solid #405268;color:#a5c5e5}
+.tag.browser{border-color:#4b4c88;color:#aaa8ff}
+.tag.cloud{border-color:#8a6335;color:#ffc477}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:3px;padding:4px 7px;font-size:10px;border:1px solid currentColor}
+.chip:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.healthy{color:var(--green);background:#10251d}
+.cooling{color:var(--amber);background:#292113}
+.disabled{color:#9aa5b1;background:#202832}
+.nokey{color:var(--red);background:#2c151d}
+.actions{display:flex;gap:5px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.good{color:var(--green)}
+.bad{color:var(--red)}
+.warn{color:var(--amber)}
+.error-line{display:none;padding:10px 14px;background:#29151b;border-bottom:1px solid #70303f;color:#ff9ba9;font-size:11px}
+.error-line.show{display:block}
+.status-line{padding:9px 14px;color:var(--muted);font-size:11px;border-top:1px solid var(--line);min-height:34px}
+.status-line.error{color:var(--red)}
+.status-line.success{color:var(--green)}
+.result{font-size:10px;color:var(--muted);margin-top:5px;white-space:normal;max-width:240px}
+.ring{max-height:370px;overflow:auto}
+.ring table{white-space:nowrap}
+.ring td,.ring th{padding:9px 12px}
+.empty{text-align:center;padding:35px;color:var(--muted)}
+.modal-backdrop{display:none;position:fixed;inset:0;background:#000b;z-index:10;align-items:center;justify-content:center;padding:18px}
+.modal-backdrop.open{display:flex}
+.modal{width:min(600px,100%);max-height:90vh;overflow:auto;background:#101923;border:1px solid #38506a;border-radius:6px;box-shadow:0 20px 80px #000}
+.modal-head{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.modal-head h2{font-size:13px;letter-spacing:1px;margin:0}
+.modal-content{padding:18px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+.field label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.form-note{font-size:10px;color:var(--amber);line-height:1.6;margin:14px 0}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line)}
+.token-overlay{display:none;position:fixed;inset:0;background:#070b10ed;z-index:30;align-items:center;justify-content:center;padding:20px}
+.token-overlay.open{display:flex}
+.token-box{width:min(420px,100%);padding:25px;background:var(--panel);border:1px solid #36516a;border-radius:6px}
+.token-box h2{font-size:15px;letter-spacing:1px;margin:0 0 8px}
+.token-box p{color:var(--muted);font-size:11px;line-height:1.7}
+.token-box input{margin:12px 0}
+footer{color:#596b7e;text-align:center;font-size:10px;padding:15px;border-top:1px solid var(--line);letter-spacing:1px}
+@media(max-width:800px){main{padding:13px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}header{padding:14px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+@media(max-width:420px){.metrics{grid-template-columns:1fr 1fr}.metric-value{font-size:19px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand">
+  <div class="logo">SC</div>
+  <div><h1>SCARECROW <span style="color:var(--green)">/</span> CONTROL</h1><div class="subtitle">OPENAI-COMPATIBLE ROUTING FABRIC // ADMIN CONSOLE</div></div>
+ </div>
+ <div class="header-right">
+  <div class="indicator"><span class="dot" id="healthDot"></span><span id="healthText">CONNECTING</span></div>
+  <div class="indicator">REFRESH <span id="refreshText" class="good">5s</span></div>
+  <button class="small" id="pauseBtn" onclick="toggleRefresh()">PAUSE</button>
+  <button class="small" onclick="showToken()">AUTH</button>
+ </div>
+</header>
+<main>
+ <div class="metrics">
+  <div class="metric"><div class="metric-label">Active instances</div><div class="metric-value" id="activeCount">—</div><div class="metric-sub">RUNNING BACKENDS</div></div>
+  <div class="metric"><div class="metric-label">Lanes</div><div class="metric-value" id="laneCount">—</div><div class="metric-sub">CONFIGURED ROUTES</div></div>
+  <div class="metric"><div class="metric-label">Requests</div><div class="metric-value" id="requestCount">—</div><div class="metric-sub">AGGREGATED LANE COUNTERS</div></div>
+  <div class="metric"><div class="metric-label">Errors</div><div class="metric-value" id="errorCount">—</div><div class="metric-sub">AGGREGATED LANE COUNTERS</div></div>
+ </div>
+ <section class="panel">
+  <div class="panel-head"><div class="panel-title">ROUTING LADDER</div><span class="muted" id="ladderCount">—</span></div>
+  <div class="panel-body"><div class="ladder" id="ladder"><span class="muted">Awaiting health data...</span></div></div>
+ </section>
+ <section class="panel">
+  <div class="panel-head">
+   <div class="panel-title">LANE TELEMETRY</div>
+   <div class="panel-tools">
+    <button class="small primary" onclick="openEditor()">+ ADD LANE</button>
+    <button class="small" id="probeAllBtn" onclick="probeAll()">PROBE ALL</button>
+    <button class="small" onclick="reloadLanes()">FORCE RELOAD</button>
+    <button class="small" onclick="refreshAll()">REFRESH</button>
+   </div>
+  </div>
+  <div class="error-line" id="errorLine"></div>
+  <div class="table-wrap">
+   <table>
+    <thead><tr><th>Lane / Brain</th><th>State</th><th>Enabled</th><th>Weight</th><th>Min interval</th><th>Cooldown</th><th>Issues</th><th>Requests / Errors</th><th>Avg wall</th><th>Last error</th><th>Actions</th></tr></thead>
+    <tbody id="laneRows"><tr><td colspan="11" class="empty">CONNECTING TO SCARECROW...</td></tr></tbody>
+   </table>
+  </div>
+  <div class="status-line" id="statusLine">INITIALIZING CONTROL PLANE...</div>
+ </section>
+ <section class="panel">
+  <div class="panel-head"><div class="panel-title">RECENT REQUEST RING</div><span class="muted">NEWEST 50 EVENTS</span></div>
+  <div class="ring">
+   <table><thead><tr><th>Time</th><th>Lane</th><th>Model</th><th>Wall (s)</th><th>Result</th></tr></thead>
+   <tbody id="recentRows"><tr><td colspan="5" class="empty">No request data yet.</td></tr></tbody></table>
+  </div>
+ </section>
+</main>
+<footer>SCARECROW CONTROL PLANE // LOCAL ADMIN INTERFACE // NO EXTERNAL DEPENDENCIES</footer>
+
+<div class="modal-backdrop" id="editorModal">
+ <div class="modal">
+  <div class="modal-head"><h2 id="editorTitle">CONFIGURE LANE</h2><button class="small" onclick="closeEditor()">CLOSE ×</button></div>
+  <form id="laneForm">
+   <div class="modal-content">
+    <div class="form-grid">
+     <div class="field"><label for="f_name">Lane name</label><input id="f_name" type="text" required maxlength="120" placeholder="my-lane"></div>
+     <div class="field"><label for="f_model">Model</label><input id="f_model" type="text" required placeholder="model-name"></div>
+     <div class="field full"><label for="f_url">Base URL</label><input id="f_url" type="text" required placeholder="http://127.0.0.1:8080/v1"></div>
+     <div class="field"><label for="f_key">Key environment variable</label><input id="f_key" type="text" required placeholder="API_KEY"></div>
+     <div class="field"><label for="f_interval">Minimum interval (seconds)</label><input id="f_interval" type="number" min="0" step="any" required value="0"></div>
+     <div class="field"><label for="f_weight">Weight</label><input id="f_weight" type="number" min="0" step="any" required value="1"></div>
+     <div class="field"><label>Enabled</label><div style="padding:7px 0"><input type="checkbox" id="f_enabled" checked> <span class="muted">Allow routing to this lane</span></div></div>
+    </div>
+    <div class="form-note">NOTE: timeout_s, extra_body and thinking are dropped by the current loader. They are intentionally not included in this editor payload.</div>
+    <div class="status-line" id="formStatus"></div>
+   </div>
+   <div class="modal-foot"><button type="button" onclick="closeEditor()">CANCEL</button><button type="submit" class="primary">SAVE LANE</button></div>
+  </form>
+ </div>
+</div>
+
+<div class="token-overlay" id="tokenOverlay">
+ <div class="token-box">
+  <h2>AUTHENTICATION REQUIRED</h2>
+  <p>Enter the ScareCrow admin bearer token. It will be stored in this browser's localStorage under <b>scarecrow_token</b>.</p>
+  <form id="tokenForm"><input id="tokenInput" type="password" autocomplete="off" placeholder="Bearer token" required><button class="primary" type="submit" style="width:100%">CONNECT</button></form>
+  <p id="tokenError" class="bad"></p>
+ </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const API = '';
+const TOKEN_KEY = 'scarecrow_token';
+const REFRESH_MS = 5000;
+let token = localStorage.getItem(TOKEN_KEY) || '';
+let refreshTimer = null;
+let paused = false;
+let refreshing = false;
+let lanes = [];
+let recent = [];
+let editorMode = 'add';
+let probingAll = false;
+let authPrompted = false;
+
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const number = (v, digits=2) => {
+ const n = Number(v);
+ return Number.isFinite(n) ? n.toFixed(digits) : '—';
+};
+const setStatus = (message, type='') => {
+ const el = $('statusLine');
+ el.textContent = message;
+ el.className = 'status-line ' + type;
+};
+const showError = message => {
+ const el = $('errorLine');
+ el.textContent = 'ERROR // ' + message;
+ el.classList.add('show');
+ setStatus(message, 'error');
+};
+const clearError = () => $('errorLine').classList.remove('show');
+
+function showToken(message='') {
+ $('tokenOverlay').classList.add('open');
+ $('tokenError').textContent = message;
+ $('tokenInput').value = '';
+ authPrompted = true;
+ setTimeout(() => $('tokenInput').focus(), 50);
+}
+function hideToken() {
+ $('tokenOverlay').classList.remove('open');
+ authPrompted = false;
+}
+function clearToken(message='Authentication required') {
+ token = '';
+ localStorage.removeItem(TOKEN_KEY);
+ showToken(message);
+}
+
+async function api(path, options={}) {
+ const headers = new Headers(options.headers || {});
+ if (token) headers.set('Authorization', 'Bearer ' + token);
+ if (options.body !== undefined) headers.set('Content-Type', 'application/json');
+ let response;
+ try {
+  response = await fetch(API + path, {...options, headers});
+ } catch (e) {
+  throw new Error('Network error: ' + e.message);
+ }
+ if (response.status === 401 && path.startsWith('/api/')) {
+  clearToken('Token rejected (401). Enter a valid admin token.');
+  throw new Error('Unauthorized. Please authenticate again.');
+ }
+ const raw = await response.text();
+ let data;
+ try { data = raw ? JSON.parse(raw) : {}; }
+ catch { data = {message:raw}; }
+ if (!response.ok) {
+  throw new Error(data.error || data.message || `HTTP ${response.status}`);
+ }
+ return data;
+}
+async function health() {
+ const data = await api('/health');
+ $('healthDot').className = 'dot online';
+ $('healthText').textContent = 'ONLINE';
+ $('activeCount').textContent = data.active_instances ?? '—';
+ if (Array.isArray(data.ladder)) {
+  $('ladder').innerHTML = data.ladder.length
+   ? data.ladder.map((name,i) => `<span class="lane-order">${i+1}. ${esc(name)}</span>`).join('')
+   : '<span class="muted">No lanes in ladder</span>';
+  $('ladderCount').textContent = data.ladder.length + ' ROUTES';
+ }
+ if (Array.isArray(data.lanes)) updateMetrics(data.lanes);
+ return data;
+}
+function updateMetrics(data) {
+ $('laneCount').textContent = data.length;
+ $('requestCount').textContent = data.reduce((s,l)=>s+(Number(l.requests)||0),0);
+ $('errorCount').textContent = data.reduce((s,l)=>s+(Number(l.errors)||0),0);
+}
+function brainType(name) {
+ const n = String(name).toLowerCase();
+ if (n.startsWith('bridge-')) return 'browser';
+ if (n === 'nvapi' || n === 'openrouter') return 'cloud';
+ return '';
+}
+function brainLabel(name) {
+ const n = String(name).toLowerCase();
+ if (n.startsWith('bridge-')) {
+  const map = {
+   'bridge-chatgpt':'GPT-6',
+   'bridge-deepseek':'DEEPSEEK',
+   'bridge-mistral':'MISTRAL',
+   'bridge-qwen':'QWEN',
+   'bridge-gemini':'GEMINI',
+   'bridge-grok':'GROK',
+   'bridge-kimi':'KIMI'
+  };
+  return map[n] || 'BROWSER';
+ }
+ if (n === 'nvapi') return 'NEMOTRON';
+ if (n === 'openrouter') return 'OPENROUTER';
+ return '';
+}
+function stateFor(lane) {
+ if (!lane.enabled) return ['disabled','DISABLED'];
+ if (!lane.has_key) return ['nokey','NO KEY'];
+ if (Number(lane.cooldown_s)>0) return ['cooling','COOLING'];
+ return ['healthy','HEALTHY'];
+}
+function renderLanes(data) {
+ lanes = Array.isArray(data) ? data : [];
+ updateMetrics(lanes);
+ if (!lanes.length) {
+  $('laneRows').innerHTML = '<tr><td colspan="11" class="empty">NO LANES CONFIGURED // ADD A LANE TO BEGIN</td></tr>';
+  return;
+ }
+ $('laneRows').innerHTML = lanes.map((l,i) => {
+  const name = String(l.lane ?? l.name ?? '');
+  const [state,label] = stateFor(l);
+  const type = brainType(name);
+  const brain = brainLabel(name);
+  const stateHtml = `<span class="chip ${state}">${label}</span>`;
+  const lastErr = l.last_err ? esc(l.last_err) : '<span class="muted">—</span>';
+  return `<tr data-lane="${esc(name)}">
+   <td><div class="lane-name">${esc(name)}</div><div class="lane-model">${esc(l.model || '—')}${brain ? `<span class="tag ${type}">${esc(type==='browser'?'BROWSER BRAIN':'CLOUD')} · ${esc(brain)}</span>`:''}</div></td>
+   <td>${stateHtml}</td>
+   <td><input type="checkbox" aria-label="Enable ${esc(name)}" ${l.enabled?'checked':''} onchange="toggleLane('${esc(name)}',this.checked)"></td>
+   <td>${esc(l.weight ?? '—')}</td>
+   <td>${number(l.min_interval_s,2)}s</td>
+   <td class="${Number(l.cooldown_s)>0?'warn':'muted'}">${number(l.cooldown_s,1)}s</td>
+   <td>${esc(l.issues ?? 0)}</td>
+   <td><span class="good">${esc(l.requests ?? 0)}</span> / <span class="bad">${esc(l.errors ?? 0)}</span></td>
+   <td>${number(l.avg_wall_s,3)}s</td>
+   <td><span title="${lastErr === '<span class="muted">—</span>' ? '' : lastErr}">${l.last_err ? esc(String(l.last_err).slice(0,90)) : '<span class="muted">—</span>'}</span></td>
+   <td><div class="actions">
+    <button class="small" onclick="probeLane('${esc(name)}')">PROBE</button>
+    <button class="small" onclick="resetLane('${esc(name)}')">RESET</button>
+    <button class="small" onclick="editLane('${esc(name)}')">EDIT</button>
+    <button class="small danger" onclick="deleteLane('${esc(name)}')">DEL</button>
+   </div><div class="result" id="result-${i}"></div></td>
+  </tr>`;
+ }).join('');
+}
+function renderRecent(rows) {
+ recent = Array.isArray(rows) ? rows.slice(0,50) : [];
+ if (!recent.length) {
+  $('recentRows').innerHTML = '<tr><td colspan="5" class="empty">NO REQUESTS RECORDED</td></tr>';
+  return;
+ }
+ $('recentRows').innerHTML = recent.map(r => {
+  const ok = r.ok === true || r.success === true;
+  const time = r.time ?? r.timestamp ?? r.created_at ?? r.ts ?? '—';
+  let formatted = time;
+  if (typeof time === 'number') {
+   const d = new Date(time > 1e12 ? time : time * 1000);
+   formatted = Number.isNaN(d.getTime()) ? time : d.toLocaleString();
+  } else if (typeof time === 'string' && time !== '—') {
+   const d = new Date(time);
+   if (!Number.isNaN(d.getTime())) formatted = d.toLocaleString();
+  }
+  return `<tr>
+   <td class="muted">${esc(formatted)}</td>
+   <td>${esc(r.lane ?? '—')}</td>
+   <td>${esc(r.model ?? '—')}</td>
+   <td>${number(r.wall_s,3)}</td>
+   <td><span class="${ok?'good':'bad'}">${ok?'OK':'FAIL'}</span></td>
+  </tr>`;
+ }).join('');
+}
+async function refreshAll() {
+ if (refreshing || !token || authPrompted) return;
+ refreshing = true;
+ try {
+  clearError();
+  const [h,d] = await Promise.all([health(),api('/api/lanes')]);
+  renderLanes(d.lanes || h.lanes || []);
+  renderRecent(d.recent || []);
+  $('healthDot').className = 'dot online';
+  $('healthText').textContent = 'ONLINE';
+  setStatus('SYNC OK // ' + new Date().toLocaleTimeString() + ' // AUTO-REFRESH 5S', 'success');
+ } catch(e) {
+  if (!authPrompted) {
+   $('healthDot').className = 'dot offline';
+   $('healthText').textContent = 'OFFLINE';
+   showError(e.message);
+  }
+ } finally {
+  refreshing = false;
+ }
+}
+function startRefresh() {
+ if (refreshTimer) clearInterval(refreshTimer);
+ refreshTimer = setInterval(() => { if (!paused) refreshAll(); }, REFRESH_MS);
+}
+function toggleRefresh() {
+ paused = !paused;
+ $('pauseBtn').textContent = paused ? 'RESUME' : 'PAUSE';
+ $('refreshText').textContent = paused ? 'PAUSED' : '5s';
+ if (!paused) refreshAll();
+}
+async function reloadLanes() {
+ try {
+  setStatus('RELOADING LANE CONFIGURATION...');
+  await api('/api/lanes/reload',{method:'POST',body:JSON.stringify({})});
+  await refreshAll();
+  setStatus('LANE CONFIGURATION RELOADED', 'success');
+ } catch(e) { showError(e.message); }
+}
+function openEditor(lane=null) {
+ editorMode = lane ? 'edit' : 'add';
+ $('editorTitle').textContent = lane ? 'EDIT LANE // ' + lane.lane : 'ADD NEW LANE';
+ $('laneForm').reset();
+ $('f_name').disabled = false;
+ $('f_interval').value = lane?.min_interval_s ?? 0;
+ $('f_weight').value = lane?.weight ?? 1;
+ $('f_enabled').checked = lane?.enabled ?? true;
+ $('f_name').value = lane?.lane ?? '';
+ $('f_url').value = lane?.base_url ?? '';
+ $('f_model').value = lane?.model ?? '';
+ $('f_key').value = lane?.key_env ?? '';
+ $('formStatus').textContent = '';
+ $('formStatus').className = 'status-line';
+ $('editorModal').classList.add('open');
+}
+function closeEditor() { $('editorModal').classList.remove('open'); }
+function editLane(name) {
+ const lane = lanes.find(l => (l.lane || l.name) === name);
+ if (lane) openEditor(lane);
+}
+$('laneForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const lane = {
+  name:$('f_name').value.trim(),
+  base_url:$('f_url').value.trim(),
+  model:$('f_model').value.trim(),
+  key_env:$('f_key').value.trim(),
+  min_interval_s:Number($('f_interval').value),
+  weight:Number($('f_weight').value),
+  enabled:$('f_enabled').checked
+ };
+ const status = $('formStatus');
+ if (!lane.name || !lane.base_url || !lane.model || !lane.key_env ||
+     !Number.isFinite(lane.min_interval_s) || lane.min_interval_s<0 ||
+     !Number.isFinite(lane.weight) || lane.weight<0) {
+  status.textContent = 'Invalid input. Check required fields and numeric values.';
+  status.className = 'status-line error';
+  return;
+ }
+ try {
+  status.textContent = 'SAVING...';
+  await api('/api/lanes',{method:'POST',body:JSON.stringify(lane)});
+  status.textContent = 'SAVED SUCCESSFULLY';
+  status.className = 'status-line success';
+  await refreshAll();
+  setTimeout(closeEditor,400);
+ } catch(err) {
+  status.textContent = 'SAVE FAILED // ' + err.message;
+  status.className = 'status-line error';
+ }
+});
+async function toggleLane(name,enabled) {
+ const lane = lanes.find(l=>(l.lane || l.name)===name);
+ if (!lane) return;
+ const payload = {
+  name,
+  base_url:lane.base_url,
+  model:lane.model,
+  key_env:lane.key_env,
+  min_interval_s:lane.min_interval_s,
+  weight:lane.weight,
+  enabled
+ };
+ try {
+  await api('/api/lanes',{method:'POST',body:JSON.stringify(payload)});
+  setStatus(name + ' // ' + (enabled?'ENABLED':'DISABLED'), 'success');
+  await refreshAll();
+ } catch(e) {
+  showError('Could not update ' + name + ': ' + e.message);
+  await refreshAll();
+ }
+}
+async function probeLane(name) {
+ const index = lanes.findIndex(l=>(l.lane || l.name)===name);
+ const result = $('result-'+index);
+ if (result) result.textContent = 'PROBING...';
+ try {
+  const data = await api('/api/lanes/probe',{method:'POST',body:JSON.stringify({name})});
+  const message = data.ok
+   ? `OK // ${number(data.wall_s,3)}s // ${data.out_tok ?? '—'} tokens // ${number(data.tok_s,2)} tok/s`
+   : 'FAIL // ' + (data.error || 'Unknown error');
+  if (result) result.textContent = message;
+  setStatus(name + ' // ' + message, data.ok?'success':'error');
+  await refreshAll();
+ } catch(e) {
+  if (result) result.textContent = 'ERROR // ' + e.message;
+  showError(name + ' probe: ' + e.message);
+ }
+}
+async function probeAll() {
+ if (probingAll) return;
+ probingAll = true;
+ const btn = $('probeAllBtn');
+ btn.disabled = true;
+ try {
+  const names = lanes.map(l=>l.lane || l.name);
+  for (const name of names) {
+   if (authPrompted) break;
+   setStatus('PROBE ALL // ' + name);
+   await probeLane(name);
+  }
+  setStatus('PROBE ALL COMPLETE', 'success');
+ } finally {
+  probingAll = false;
+  btn.disabled = false;
+  await refreshAll();
+ }
+}
+async function resetLane(name) {
+ try {
+  setStatus('RESETTING ' + name + '...');
+  const data = await api('/api/lanes/reset',{method:'POST',body:JSON.stringify({name})});
+  setStatus(`${name} RESET // COOLDOWN ${number(data.cooldown_s,2)}s // ISSUES ${data.issues ?? '—'}`, 'success');
+  await refreshAll();
+ } catch(e) { showError(e.message); }
+}
+async function deleteLane(name) {
+ if (!confirm('Delete lane "' + name + '"? This cannot be undone.')) return;
+ try {
+  await api('/api/lanes/delete',{method:'POST',body:JSON.stringify({name})});
+  setStatus(name + ' DELETED', 'success');
+  await refreshAll();
+ } catch(e) { showError(e.message); }
+}
+$('tokenForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const value = $('tokenInput').value.trim();
+ if (!value) return;
+ token = value;
+ localStorage.setItem(TOKEN_KEY,token);
+ hideToken();
+ await refreshAll();
+});
+window.toggleRefresh = toggleRefresh;
+window.showToken = showToken;
+window.refreshAll = refreshAll;
+window.reloadLanes = reloadLanes;
+window.openEditor = openEditor;
+window.closeEditor = closeEditor;
+window.editLane = editLane;
+window.toggleLane = toggleLane;
+window.probeLane = probeLane;
+window.probeAll = probeAll;
+window.resetLane = resetLane;
+window.deleteLane = deleteLane;
+
+$('editorModal').addEventListener('click',e=>{if(e.target===$('editorModal'))closeEditor()});
+startRefresh();
+if (token) refreshAll();
+else showToken();
+})();
+</script>
+</body>
+</html>

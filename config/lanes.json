@@ -25,8 +25,7 @@
       "key_env": "BRIDGE_ADAPTER_NO_KEY",
       "min_interval_s": 1.0,
       "weight": 10,
-      "enabled": true,
-      "timeout_s": 360.0
+      "enabled": true
     },
     {
       "name": "bridge-chatgpt",
@@ -35,8 +34,7 @@
       "key_env": "BRIDGE_ADAPTER_NO_KEY",
       "min_interval_s": 1.0,
       "weight": 10,
-      "enabled": true,
-      "timeout_s": 360.0
+      "enabled": true
     },
     {
       "name": "bridge-mistral",
@@ -45,8 +43,7 @@
       "key_env": "BRIDGE_ADAPTER_NO_KEY",
       "min_interval_s": 1.0,
       "weight": 10,
-      "enabled": true,
-      "timeout_s": 360.0
+      "enabled": true
     },
     {
       "name": "bridge-qwen",
@@ -55,8 +52,7 @@
       "key_env": "BRIDGE_ADAPTER_NO_KEY",
       "min_interval_s": 1.0,
       "weight": 10,
-      "enabled": true,
-      "timeout_s": 360.0
+      "enabled": true
     }
   ]
 }
