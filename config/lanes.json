@@ -1,0 +1,62 @@
+{
+  "lanes": [
+    {
+      "name": "nvapi",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "key_env": "NVIDIA_API_KEY",
+      "min_interval_s": 1.6,
+      "weight": 100,
+      "enabled": true
+    },
+    {
+      "name": "openrouter",
+      "base_url": "https://openrouter.ai/api/v1",
+      "model": "openrouter/free",
+      "key_env": "OPENROUTER_API_KEY",
+      "min_interval_s": 1.0,
+      "weight": 50,
+      "enabled": true
+    },
+    {
+      "name": "bridge-deepseek",
+      "base_url": "http://192.168.0.33:8507/v1",
+      "model": "deepseek",
+      "key_env": "BRIDGE_ADAPTER_NO_KEY",
+      "min_interval_s": 1.0,
+      "weight": 10,
+      "enabled": true,
+      "timeout_s": 360.0
+    },
+    {
+      "name": "bridge-chatgpt",
+      "base_url": "http://192.168.0.33:8507/v1",
+      "model": "chatgpt",
+      "key_env": "BRIDGE_ADAPTER_NO_KEY",
+      "min_interval_s": 1.0,
+      "weight": 10,
+      "enabled": true,
+      "timeout_s": 360.0
+    },
+    {
+      "name": "bridge-mistral",
+      "base_url": "http://192.168.0.33:8507/v1",
+      "model": "mistral",
+      "key_env": "BRIDGE_ADAPTER_NO_KEY",
+      "min_interval_s": 1.0,
+      "weight": 10,
+      "enabled": true,
+      "timeout_s": 360.0
+    },
+    {
+      "name": "bridge-qwen",
+      "base_url": "http://192.168.0.33:8507/v1",
+      "model": "qwen",
+      "key_env": "BRIDGE_ADAPTER_NO_KEY",
+      "min_interval_s": 1.0,
+      "weight": 10,
+      "enabled": true,
+      "timeout_s": 360.0
+    }
+  ]
+}

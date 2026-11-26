@@ -1,0 +1,34 @@
+# scarecrow-balancer — standalone full-control deployment.
+#
+# THE FULL-CONTROL DIFFERENCE vs the baked sunny-scarecrow container:
+#   source/ and config/ are BIND-MOUNTED — editing balancer.py or lanes.json on
+#   the host takes effect on `docker compose restart` with zero image rebuild.
+#   The registry is also hot-reloaded by the balancer itself (mtime watch), so
+#   lanes.json edits do not even need a restart.
+#
+# Cutover from sunny-scarecrow: run THIS compose on a shadow port first
+# (FORK_BALANCER_PORT=8487), verify /health + a pinned consult, then flip the
+# host port to 8486 and stop the old container. Owner-gated — never silently.
+#
+# Keys live in .env (gitignored). Template: .env.example
+
+services:
+  scarecrow:
+    image: python:3.12-slim
+    container_name: scarecrow-standalone
+    working_dir: /app
+    command: python -u balancer.py
+    ports:
+      - "${FORK_BALANCER_PORT:-8486}:8486"
+    volumes:
+      - ../source:/app:ro
+      - ../config/lanes.json:/app/lanes.json:ro
+    environment:
+      FORK_BALANCER_HOST: 0.0.0.0
+      FORK_BALANCER_PORT: 8486
+      FORK_BALANCER_TOKEN: ${FORK_BALANCER_TOKEN}
+      FORK_LANES_PATH: /app/lanes.json
+      FORK_PROBE_INTERVAL_S: ${FORK_PROBE_INTERVAL_S:-1200}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+    restart: unless-stopped
