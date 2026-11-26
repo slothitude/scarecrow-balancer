@@ -1,0 +1,7 @@
+[scarecrow] lanes loaded from C:/Users/aaron/scarecrow-balancer/config/lanes.json: nvapi, openrouter, bridge-deepseek, bridge-chatgpt, bridge-mistral, bridge-qwen
+[scarecrow] lane bridge-deepseek has NO KEY (BRIDGE_ADAPTER_NO_KEY unset) - it will never dispatch
+[scarecrow] lane bridge-chatgpt has NO KEY (BRIDGE_ADAPTER_NO_KEY unset) - it will never dispatch
+[scarecrow] lane bridge-mistral has NO KEY (BRIDGE_ADAPTER_NO_KEY unset) - it will never dispatch
+[scarecrow] lane bridge-qwen has NO KEY (BRIDGE_ADAPTER_NO_KEY unset) - it will never dispatch
+[scarecrow] ScareCrow on http://0.0.0.0:8487/v1  model=scarecrow  lanes=nvapi,openrouter,bridge-chatgpt,bridge-deepseek,bridge-mistral,bridge-qwen  registry=C:/Users/aaron/scarecrow-balancer/config/lanes.json  probe=1200s  token=on
+[scarecrow] bridge-chatgpt 200 wall=12.2s

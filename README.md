@@ -68,3 +68,16 @@ live in the running container's environment.
 
 *Extracted and standalone-validated 2026-11-26 by the nnfs lane, owner-directed.
 Internals reference: see `docs/BALANCER_INTERNALS.md`.*
+
+## Ops note (2026-11-26): the probe daemon and the rw-layer registry
+
+- The probe daemon canaries every lane with an 8-token "Reply with exactly: OK" call
+  every `FORK_PROBE_INTERVAL_S` (default 1200). Through the browser bridge that spam
+  lands in the chatgpt session — this deployment therefore ships with
+  `FORK_PROBE_INTERVAL_S=0` (daemon disabled). Set it only if you want probes and
+  accept the bridge traffic.
+- **Back up the registry before `docker rm`.** Lane edits made through the admin CRUD
+  write into the container's rw layer (`/app/lanes.json` / `/app/data/lanes.json`),
+  which dies with the container. `lanes.json` in this repo is the extracted full
+  registry (with bridges) — restore with `docker cp` into `/app/data/lanes.json`,
+  then any `/api/*` request or chat dispatch hot-reloads it.
